@@ -9,6 +9,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 // 1. Path Verification
 const envPath = path.resolve(process.cwd(), '.env');
@@ -92,11 +93,16 @@ const supabase = createClient(
 // ============================================================
 
 const app = express();
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const frontendDistPath = path.resolve(serverDir, '../frontend/dist');
 
 // --- Middleware ---
 
 // Parse incoming JSON bodies (for POST/PUT routes later)
 app.use(express.json());
+
+// Serve the built frontend static assets in production
+app.use(express.static(frontendDistPath));
 
 // CORS — allow the live Render origin and keep localhost development working
 app.use(
@@ -1056,9 +1062,23 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
 });
 
 // ============================================================
-// 7. 404 CATCH-ALL
+// 7. FRONTEND SPA FALLBACK
 // ============================================================
-// Any route that doesn't match the above handlers gets a clean
+// In production, any non-API request should serve the built
+// React app entrypoint so the backend becomes the single host.
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
+// ============================================================
+// 8. 404 CATCH-ALL
+// ============================================================
+// Any API route that doesn't match the above handlers gets a clean
 // JSON 404 instead of Express's default HTML error page.
 
 app.use((_req, res) => {

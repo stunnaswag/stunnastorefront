@@ -1,0 +1,13 @@
+{
+  "name": "stunna-storefront",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "server"
+  ],
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix server run start"
+  }
+}
