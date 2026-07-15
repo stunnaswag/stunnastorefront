@@ -220,8 +220,8 @@ const BrandText = React.memo(() => {
 
   return (
     <group>
-      <Text position={[0, topY, 0]} fontSize={dynamicFontSize} letterSpacing={dynamicLetterSpacing} color="#E0115F" anchorX="center" anchorY="middle" fontWeight="bold">
-        STUNNA
+      <Text position={[0, topY, 0]} fontSize={dynamicFontSize} letterSpacing={-0.1} color="#8B0000" anchorX="center" anchorY="middle" fontWeight="900" strokeWidth={0.05} strokeColor="#8B0000">
+        $$$
       </Text>
       <Text position={[0, bottomY, 0]} fontSize={subtitleFontSize} letterSpacing={dynamicLetterSpacing} color="#E0115F" anchorX="center" anchorY="middle" fontWeight="bold">
         SWAG SEASON

@@ -63,8 +63,8 @@ export default function Navbar() {
         
         {/* CENTER: Dynamic Brand Logo */}
         <div className="flex-1 flex justify-center">
-          <Link to="/" className={`text-2xl font-normal tracking-tight lowercase hover:opacity-70 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>
-            stunna
+          <Link to="/" className="text-[#8B0000] font-black font-[Impact,Arial_Black,sans-serif] tracking-[-0.1em] text-3xl md:text-4xl [WebkitTextStroke:1px_#8B0000] hover:opacity-70 transition-opacity">
+            $$$
           </Link>
         </div>
 
