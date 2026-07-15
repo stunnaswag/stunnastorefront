@@ -353,6 +353,30 @@ app.get('/api/products/:slug', async (req, res) => {
   }
 });
 
+// ----- GET /api/orders/:id ----------------------------------
+app.get('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('id, created_at, total_amount, payment_status, fulfillment_status')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ success: false, message: 'Order not found.' });
+      }
+      throw error;
+    }
+
+    return res.status(200).json({ success: true, data: order });
+  } catch (err) {
+    console.error('Fetch Order Error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+});
+
 // ============================================================
 // 4b. TRANSACTION ENDPOINTS
 // ============================================================
@@ -369,7 +393,7 @@ app.post('/api/checkout', async (req, res) => {
     let serverTotalAmount = 0;
     const orderItemsToInsert = [];
 
-    // 1. Validate Prices and Calculate Total Server-Side
+    // 1. Validate Prices, Stock, and Calculate Total Server-Side
     for (const item of cart) {
       const { data: productData, error: productError } = await supabase
         .from('products')
@@ -379,6 +403,17 @@ app.post('/api/checkout', async (req, res) => {
 
       if (productError || !productData) {
         throw new Error(`Invalid product in cart: ${item.product.id}`);
+      }
+
+      // Pre-flight Stock Validation
+      const { data: variantData, error: variantError } = await supabase
+        .from('variants')
+        .select('stock')
+        .eq('id', item.variant.id)
+        .single();
+
+      if (variantError || !variantData || variantData.stock < item.quantity) {
+        return res.status(400).json({ success: false, message: "Inventory error: Not enough stock for variant ID " + item.variant.id });
       }
 
       serverTotalAmount += productData.base_price * item.quantity;
@@ -434,28 +469,45 @@ app.post('/api/checkout', async (req, res) => {
 
 // ----- POST /api/checkout/manual ----------------------------
 app.post('/api/checkout/manual', async (req, res) => {
-  const { customer_email, customer_name, customer_phone, shipping_address, cart, reference_id } = req.body;
+  const { customer_email, customer_name, customer_phone, shipping_address, cart, payment_proof_base64 } = req.body;
 
-  if (!customer_email || !customer_name || !cart || !cart.length || !reference_id) {
-    return res.status(400).json({ success: false, message: 'Missing required checkout fields or reference ID.' });
+  if (!customer_email || !customer_name || !cart || !cart.length || !payment_proof_base64) {
+    return res.status(400).json({ success: false, message: 'Missing required checkout fields or payment proof.' });
   }
 
   try {
-    // 1. Duplicate Prevention: Check reference_id
-    const { data: existingPayment } = await supabase
-      .from('manual_payments')
-      .select('id')
-      .eq('reference_id', reference_id)
-      .maybeSingle();
+    let payment_proof_url = null;
+    
+    // 1. Upload payment proof
+    try {
+      const base64Data = payment_proof_base64.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      const extMatch = payment_proof_base64.match(/^data:image\/(\w+);base64,/);
+      const ext = extMatch ? extMatch[1] : 'jpg';
+      const contentType = extMatch ? `image/${ext}` : 'image/jpeg';
+      
+      const fileName = `proof-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('orders')
+        .upload(fileName, buffer, {
+          contentType: contentType,
+          upsert: true
+        });
 
-    if (existingPayment) {
-      return res.status(400).json({ success: false, message: 'Duplicate transaction reference. This reference ID has already been submitted.' });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('orders').getPublicUrl(fileName);
+      payment_proof_url = urlData.publicUrl;
+    } catch (uploadError) {
+      console.error('Failed to upload payment proof:', uploadError);
+      return res.status(500).json({ success: false, message: 'Failed to upload payment proof.' });
     }
 
     let serverTotalAmount = 0;
     const orderItemsToInsert = [];
 
-    // 2. Validate Prices and Calculate Total Server-Side
+    // 2. Validate Prices, Stock, and Calculate Total Server-Side
     for (const item of cart) {
       const { data: productData, error: productError } = await supabase
         .from('products')
@@ -465,6 +517,17 @@ app.post('/api/checkout/manual', async (req, res) => {
 
       if (productError || !productData) {
         throw new Error(`Invalid product in cart: ${item.product.id}`);
+      }
+
+      // Pre-flight Stock Validation
+      const { data: variantData, error: variantError } = await supabase
+        .from('variants')
+        .select('stock')
+        .eq('id', item.variant.id)
+        .single();
+
+      if (variantError || !variantData || variantData.stock < item.quantity) {
+        return res.status(400).json({ success: false, message: "Inventory error: Not enough stock for variant ID " + item.variant.id });
       }
 
       serverTotalAmount += productData.base_price * item.quantity;
@@ -490,7 +553,8 @@ app.post('/api/checkout/manual', async (req, res) => {
         shipping_address,
         total_amount: serverTotalAmount,
         payment_status: 'manual_pending',
-        paystack_reference: `MANUAL-${Date.now()}`
+        paystack_reference: `MANUAL-${Date.now()}`,
+        payment_proof_url
       }])
       .select()
       .single();
@@ -513,7 +577,8 @@ app.post('/api/checkout/manual', async (req, res) => {
           order_id: createdOrderId,
           customer_email,
           amount: serverTotalAmount,
-          reference_id,
+          reference_id: `MANUAL-${Date.now()}`,
+          payment_proof_url,
           status: 'Pending'
         }]);
 
@@ -671,7 +736,7 @@ app.get('/api/admin/orders', requireAdmin, async (_req, res) => {
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
-        id, customer_email, customer_name, total_amount, payment_status, fulfillment_status, tracking_number, fulfilled_at, created_at,
+        id, customer_email, customer_name, total_amount, payment_status, fulfillment_status, tracking_number, fulfilled_at, created_at, payment_proof_url,
         order_items ( id, variant_id, product_name, variant_label, quantity, price_at_purchase )
       `)
       .order('created_at', { ascending: false });
@@ -1027,11 +1092,12 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
 
     if (updateError) throw updateError;
 
-    // 3. Update orders payment_status
+    // 3. Update orders payment_status and fulfillment_status
     const orderStatus = status === 'Verified' ? 'success' : 'failed';
+    const fulfillmentStatus = status === 'Verified' ? 'processing' : 'cancelled';
     const { error: orderError } = await supabase
       .from('orders')
-      .update({ payment_status: orderStatus })
+      .update({ payment_status: orderStatus, fulfillment_status: fulfillmentStatus })
       .eq('id', payment.order_id);
 
     if (orderError) throw orderError;

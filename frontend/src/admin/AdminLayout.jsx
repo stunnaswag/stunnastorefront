@@ -9,6 +9,7 @@ const navItems = [
   { to: '/admin/payments', label: 'Payments' },
   { to: '/admin/inventory', label: 'Inventory' },
   { to: '/admin/orders', label: 'Orders' },
+  { to: '/admin/settings', label: 'Settings' },
 ];
 
 function SidebarContent({ onLogout, onNavigate }) {

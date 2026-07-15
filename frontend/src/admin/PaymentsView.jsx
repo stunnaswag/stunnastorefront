@@ -110,7 +110,12 @@ export default function PaymentsView({ onAuthError }) {
                     <p className="text-[10px] uppercase tracking-[0.3em] text-[#EAEAEA]/40">PAYMENT</p>
                     <p className="mt-1 font-medium text-[#EAEAEA]">{payment.customer_email}</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase ${getStatusColor(payment.status)}`}>{payment.status}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase ${getStatusColor(payment.status)}`}>{payment.status}</span>
+                    {payment.status === 'Rejected' && payment.verification_notes && (
+                      <span className="text-[9px] uppercase tracking-wider text-red-500/50 max-w-[120px] text-right">NOTE: {payment.verification_notes}</span>
+                    )}
+                  </div>
                 </div>
 
                 <dl className="mt-4 space-y-3 text-sm text-[#EAEAEA]/80">
@@ -177,8 +182,11 @@ export default function PaymentsView({ onAuthError }) {
                     <td className="py-5 pr-4 text-[#EAEAEA]/50">
                       {payment.reference_id}
                     </td>
-                    <td className={`py-5 pr-4 font-medium ${getStatusColor(payment.status)}`}>
-                      {payment.status}
+                    <td className="py-5 pr-4">
+                      <div className={`font-medium ${getStatusColor(payment.status)}`}>{payment.status}</div>
+                      {payment.status === 'Rejected' && payment.verification_notes && (
+                        <div className="text-[9px] uppercase tracking-wider text-red-500/50 mt-1">NOTE: {payment.verification_notes}</div>
+                      )}
                     </td>
                     <td className="py-5 text-right flex justify-end gap-2">
                       {payment.status === 'Pending' ? (

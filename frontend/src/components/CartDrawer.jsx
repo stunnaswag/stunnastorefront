@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import CheckoutModal from './CheckoutModal';
+import { useNavigate } from 'react-router-dom';
 
 export default function CartDrawer() {
-  const { cart, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, cartSubtotal, cartItemCount } = useCart();
+  const { cart, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, clearCart, cartSubtotal, cartItemCount, shippingCost, promoDiscount, cartTotal, saveForLater, savedItems, moveToCart, removeSavedItem } = useCart();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <AnimatePresence>
@@ -76,6 +78,9 @@ export default function CartDrawer() {
                         <button onClick={() => removeFromCart(item.variant.id)} className="ml-4 hover:opacity-50 transition-opacity text-[10px] uppercase tracking-widest text-stunna-text border-b-[1px] border-stunna-text/20 pb-[1px]">
                           REMOVE
                         </button>
+                        <button onClick={() => saveForLater(item.variant.id)} className="ml-4 hover:opacity-50 transition-opacity text-[10px] uppercase tracking-widest text-stunna-text border-b-[1px] border-stunna-text/20 pb-[1px]">
+                          SAVE FOR LATER
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -83,11 +88,62 @@ export default function CartDrawer() {
               )}
             </div>
 
+            {savedItems && savedItems.length > 0 && (
+              <div className="flex-1 overflow-y-auto p-8 pt-0 flex flex-col gap-6">
+                <h3 className="text-xs uppercase tracking-widest font-medium text-stunna-text border-b-[1px] border-stunna-text/20 pb-4">SAVED FOR LATER ({savedItems.length})</h3>
+                {savedItems.map(item => (
+                  <div key={item.variant.id} className="flex gap-6 border-b-[1px] border-stunna-text/10 pb-6 last:border-0 opacity-70 hover:opacity-100 transition-opacity">
+                    {item.product.thumbnail_url || item.product.image_urls?.[0] ? (
+                      <img src={item.product.thumbnail_url || item.product.image_urls?.[0]} alt={item.product.name} className="w-16 h-20 object-cover shrink-0 border-[1px] border-stunna-text/20" />
+                    ) : (
+                      <div className="w-16 h-20 bg-stunna-text/5 shrink-0 border-[1px] border-stunna-text/20"></div>
+                    )}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="text-[10px] uppercase tracking-widest font-medium text-stunna-text mb-1">{item.product.name}</h4>
+                        <p className="text-[10px] uppercase tracking-widest text-stunna-text/60 mb-2">SIZE: {item.variant.size}</p>
+                        <p className="text-[10px] uppercase tracking-widest font-medium text-stunna-text">₦{(item.product.base_price).toLocaleString()}</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mt-2">
+                        <button onClick={() => moveToCart(item.variant.id)} className="hover:opacity-50 transition-opacity text-[10px] uppercase tracking-widest text-stunna-text border-b-[1px] border-stunna-text/20 pb-[1px]">
+                          MOVE TO BAG
+                        </button>
+                        <button onClick={() => removeSavedItem(item.variant.id)} className="ml-4 hover:opacity-50 transition-opacity text-[10px] uppercase tracking-widest text-stunna-text border-b-[1px] border-stunna-text/20 pb-[1px]">
+                          REMOVE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {cart.length > 0 && (
               <div className="p-8 border-t-[1px] border-stunna-text/20 bg-stunna-bg flex flex-col gap-6">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/60">SUBTOTAL</span>
                   <span className="text-xs uppercase tracking-widest font-medium text-stunna-text">₦{cartSubtotal.toLocaleString()}</span>
+                </div>
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between items-center text-green-500">
+                    <span className="text-[10px] uppercase tracking-widest font-medium">DISCOUNT</span>
+                    <span className="text-xs uppercase tracking-widest font-medium">- ₦{promoDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/60">SHIPPING</span>
+                  <span className="text-xs uppercase tracking-widest font-medium text-stunna-text">
+                    {shippingCost > 0 ? `₦${shippingCost.toLocaleString()}` : 'CALCULATED AT CHECKOUT'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-t-[1px] border-stunna-text/10 pt-4">
+                  <span className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/60">EST. DELIVERY</span>
+                  <span className="text-xs uppercase tracking-widest font-medium text-stunna-text">3-5 BUSINESS DAYS</span>
+                </div>
+                <div className="flex justify-between items-center border-t-[1px] border-stunna-text/20 pt-4">
+                  <span className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/80">TOTAL</span>
+                  <span className="text-sm uppercase tracking-widest font-bold text-stunna-text">₦{cartTotal.toLocaleString()}</span>
                 </div>
                 <button 
                   onClick={() => setIsCheckoutOpen(true)}
@@ -101,12 +157,13 @@ export default function CartDrawer() {
             {isCheckoutOpen && (
             <CheckoutModal 
               cart={cart}
-              totalAmount={cartSubtotal}
+              totalAmount={cartTotal}
               onClose={() => setIsCheckoutOpen(false)} 
               onSuccess={(orderId) => {
                 setIsCheckoutOpen(false);
                 setIsCartOpen(false);
-                window.alert('Order Placed Successfully! Order ID: ' + orderId);
+                clearCart();
+                navigate('/order-confirmation/' + orderId);
               }} 
             />
           )}

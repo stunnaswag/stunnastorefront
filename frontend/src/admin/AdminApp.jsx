@@ -7,6 +7,7 @@ import OrdersView from './OrdersView';
 import DashboardHome from './DashboardHome';
 import StorefrontManager from './StorefrontManager';
 import PaymentsView from './PaymentsView';
+import SettingsView from './SettingsView';
 
 export default function AdminApp() {
   const [adminKey, setAdminKey] = useState(localStorage.getItem('stunna_admin_token') || '');
@@ -36,6 +37,7 @@ export default function AdminApp() {
         <Route path="/orders" element={<OrdersView adminKey={adminKey} onAuthError={handleLogout} />} />
         <Route path="/storefront" element={<StorefrontManager adminKey={adminKey} onAuthError={handleLogout} />} />
         <Route path="/payments" element={<PaymentsView adminKey={adminKey} onAuthError={handleLogout} />} />
+        <Route path="/settings" element={<SettingsView adminKey={adminKey} onAuthError={handleLogout} />} />
       </Routes>
     </AdminLayout>
   );

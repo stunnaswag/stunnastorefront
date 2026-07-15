@@ -14,6 +14,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Catalog = lazy(() => import('./pages/Catalog'));
 const ProductPage = lazy(() => import('./pages/ProductPage'));
 const Policies = lazy(() => import('./pages/Policies'));
+const OrderConfirmation = lazy(() => import('./pages/OrderConfirmation'));
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 function LoaderOverlay() {
@@ -61,6 +62,7 @@ function AppContent() {
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/product/:slug" element={<ProductPage />} />
+              <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
               <Route path="/policies" element={<Policies />} />
               <Route path="/admin/*" element={<AdminApp />} />
             </Routes>

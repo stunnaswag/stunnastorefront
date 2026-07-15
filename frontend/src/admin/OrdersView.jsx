@@ -67,9 +67,28 @@ export default function OrdersView({ adminKey, onAuthError }) {
                   <dd>₦{o.total_amount.toLocaleString()}</dd>
                 </div>
               </dl>
-              <button type="button" onClick={() => { setSelectedOrder(o); setModalOpen(true); }} className="mt-4 min-h-11 w-full rounded-full border border-[#EAEAEA]/20 bg-[#2C1414] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#EAEAEA]">
-                UPDATE STATUS
-              </button>
+              {o.payment_proof_url && (
+                <div className="mt-4">
+                  <p className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 mb-2">PAYMENT PROOF</p>
+                  <a href={o.payment_proof_url} target="_blank" rel="noreferrer">
+                    <img src={o.payment_proof_url} alt="Payment Proof" className="w-full max-h-48 object-contain rounded border border-[#EAEAEA]/20" />
+                  </a>
+                </div>
+              )}
+              {o.payment_status === 'manual_pending' ? (
+                <div className="mt-4 w-full flex flex-col items-center gap-2">
+                  <div className="text-[9px] uppercase tracking-widest text-yellow-500/80 font-bold bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20 w-full text-center">
+                    AWAITING PAYMENT VERIFICATION
+                  </div>
+                  <button type="button" disabled className="min-h-11 w-full rounded-full border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#EAEAEA]/30 cursor-not-allowed">
+                    UPDATE STATUS
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => { setSelectedOrder(o); setModalOpen(true); }} className="mt-4 min-h-11 w-full rounded-full border border-[#EAEAEA]/20 bg-[#2C1414] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#EAEAEA] hover:bg-[#EAEAEA]/10 transition-colors">
+                  UPDATE STATUS
+                </button>
+              )}
             </article>
           ))}
         </div>
@@ -81,6 +100,7 @@ export default function OrdersView({ adminKey, onAuthError }) {
                 <th className="py-4 font-normal text-[#EAEAEA]/30">ID</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">CUSTOMER EMAIL</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">TOTAL AMOUNT</th>
+                <th className="py-4 font-normal text-[#EAEAEA]/30">PROOF</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">FULFILLMENT</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30 text-right">ACTIONS</th>
               </tr>
@@ -91,15 +111,33 @@ export default function OrdersView({ adminKey, onAuthError }) {
                   <td className="py-5 pr-4 text-[#EAEAEA]/50">{o.id.split('-')[0]}...</td>
                   <td className="py-5 pr-4 text-[#EAEAEA] font-medium">{o.customer_email}</td>
                   <td className="py-5 pr-4 text-[#EAEAEA]/70">₦{o.total_amount.toLocaleString()}</td>
+                  <td className="py-5 pr-4">
+                    {o.payment_proof_url ? (
+                      <a href={o.payment_proof_url} target="_blank" rel="noreferrer">
+                        <img src={o.payment_proof_url} alt="Proof" className="w-12 h-12 object-cover rounded border border-[#EAEAEA]/20" />
+                      </a>
+                    ) : (
+                      <span className="text-[#EAEAEA]/30 text-[9px]">N/A</span>
+                    )}
+                  </td>
                   <td className={`py-5 pr-4 font-medium ${getStatusColor(o.fulfillment_status)}`}>{o.fulfillment_status}</td>
-                  <td className="py-5 text-right flex justify-end">
-                    <button 
-                      type="button"
-                      onClick={() => { setSelectedOrder(o); setModalOpen(true); }}
-                      className="text-[#EAEAEA]/50 hover:text-[#EAEAEA] transition-colors underline underline-offset-4"
-                    >
-                      UPDATE STATUS
-                    </button>
+                  <td className="py-5 text-right">
+                    {o.payment_status === 'manual_pending' ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[9px] uppercase tracking-widest text-yellow-500/80 font-bold bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">AWAITING VERIFICATION</span>
+                        <button type="button" disabled className="text-[#EAEAEA]/20 cursor-not-allowed underline underline-offset-4 text-[10px]">UPDATE STATUS</button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end">
+                        <button 
+                          type="button"
+                          onClick={() => { setSelectedOrder(o); setModalOpen(true); }}
+                          className="text-[#EAEAEA]/50 hover:text-[#EAEAEA] transition-colors underline underline-offset-4"
+                        >
+                          UPDATE STATUS
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -63,8 +63,10 @@ export default function Navbar() {
         
         {/* CENTER: Dynamic Brand Logo */}
         <div className="flex-1 flex justify-center">
-          <Link to="/" className="text-[#8B0000] font-black font-[Impact,Arial_Black,sans-serif] tracking-[-0.1em] text-3xl md:text-4xl [WebkitTextStroke:1px_#8B0000] hover:opacity-70 transition-opacity">
-            $$$
+          <Link to="/" className="bg-stunna-bg px-4 py-1 rounded-none flex items-center justify-center hover:opacity-70 transition-opacity">
+            <span className="inline-block text-[#8B0000] font-black font-[Impact,Arial_Black,sans-serif] tracking-[-0.15em] leading-none text-2xl md:text-3xl [-webkit-text-stroke:2px_#8B0000] scale-x-[1.3] scale-y-[0.85] origin-center">
+              $$$
+            </span>
           </Link>
         </div>
 
