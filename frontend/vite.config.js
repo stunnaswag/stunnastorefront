@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true, // Fail loudly if port is blocked
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          target: env.VITE_API_URL || 'https://stunnaswagseason.onrender.com',
           changeOrigin: true,
         },
       },

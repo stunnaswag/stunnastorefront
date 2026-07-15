@@ -38,7 +38,13 @@ import { createClient } from '@supabase/supabase-js';
 // 1. ENVIRONMENT VALIDATION
 // ============================================================
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5500';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://stunnaswagseason.onrender.com';
+const allowedOrigins = Array.from(new Set([
+  CLIENT_URL,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+].filter(Boolean)));
 
 // 3. Cleaning: trim and remove quotes
 let rawSupabaseUrl = process.env.SUPABASE_URL || '';
@@ -92,10 +98,17 @@ const app = express();
 // Parse incoming JSON bodies (for POST/PUT routes later)
 app.use(express.json());
 
-// CORS — restrict to our frontend origin in production
+// CORS — allow the live Render origin and keep localhost development working
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
