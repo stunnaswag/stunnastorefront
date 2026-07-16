@@ -55,30 +55,16 @@ function BiologicalSnake() {
   const meshRef = useRef();
   const headRef = useRef();
 
-  const instancedGeoRef = useRef();
-  const instancedMatRef = useRef();
-
-  // 4. Pre-allocate vectors and objects outside the loop
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const headPos = useMemo(() => new THREE.Vector3(), []);
+  const dummyPos = useMemo(() => new THREE.Vector3(), []);
   const lookAtPos = useMemo(() => new THREE.Vector3(), []);
-  
-  // 2. Persistent History Buffer
-  const MAX_HISTORY = 400; // Enough for 300 segments with spacing
-  const historyRef = useRef(new Array(MAX_HISTORY).fill(null).map(() => new THREE.Vector3()));
-  
-  // 3. Segment Current Positions for across-frame Lerp
-  const currentPositionsRef = useRef(new Array(SEGMENTS).fill(null).map(() => new THREE.Vector3()));
-  const isInitialized = useRef(false);
 
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 768;
 
-  const curve = useMemo(() => {
+  const basePoints = useMemo(() => {
     const orbitRadius = Math.max(3.0, Math.min(5.2, viewportWidth / 320));
     const verticalLift = Math.max(0.35, Math.min(0.75, viewportHeight / 1500));
-
-    return new THREE.CatmullRomCurve3([
+    return [
       new THREE.Vector3(-orbitRadius, 0.0, orbitRadius * 0.65),
       new THREE.Vector3(-orbitRadius * 0.55, verticalLift, orbitRadius * 1.06),
       new THREE.Vector3(0.0, 0.0, orbitRadius * 1.4),
@@ -87,119 +73,99 @@ function BiologicalSnake() {
       new THREE.Vector3(orbitRadius * 0.55, verticalLift, -orbitRadius * 1.02),
       new THREE.Vector3(0.0, 0.0, -orbitRadius * 1.38),
       new THREE.Vector3(-orbitRadius * 0.55, -verticalLift, -orbitRadius * 1.0),
-    ], true);
+    ];
   }, [viewportWidth, viewportHeight]);
+
+  const baseCurve = useMemo(() => new THREE.CatmullRomCurve3(basePoints.map(p => p.clone()), true), [basePoints]);
+  
+  const bodyPoints = useMemo(() => new Array(31).fill(null).map(() => new THREE.Vector3()), []);
+  const initialSubCurve = useMemo(() => {
+    for (let i = 0; i <= 30; i++) {
+      let t = -(i / 30) * 0.4;
+      if (t < 0) t += 1.0;
+      baseCurve.getPointAt(t, bodyPoints[i]);
+    }
+    return new THREE.CatmullRomCurve3(bodyPoints, false);
+  }, [baseCurve, bodyPoints]);
 
   useEffect(() => {
     return () => {
-      if (instancedGeoRef.current) instancedGeoRef.current.dispose();
-      if (instancedMatRef.current) instancedMatRef.current.dispose();
-      if (meshRef.current) meshRef.current.dispose();
+      if (meshRef.current && meshRef.current.geometry) {
+        meshRef.current.geometry.dispose();
+      }
     };
   }, []);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
-    const history = historyRef.current;
-    const currentPositions = currentPositionsRef.current;
+    const headT = (time * 0.2) % 1.0;
+    const snakeLength = 0.4;
 
-    // 1. Leader (Head) movement
-    const headT = (time * 0.15) % 1.0;
-    curve.getPointAt(headT, headPos);
-    headPos.y += Math.sin(time * 5.0) * 0.15; // Organic head bob
-
-    if (!isInitialized.current) {
-      const curveLength = curve.getLength();
-      const tStep = 0.04 / curveLength;
-      const speed = 0.15 * curveLength;
-      for (let i = 0; i < MAX_HISTORY; i++) {
-        const pastT = (headT - i * tStep + 10.0) % 1.0;
-        curve.getPointAt(pastT, history[i]);
-        const pastTime = time - (i * 0.04) / speed;
-        history[i].y += Math.sin(pastTime * 5.0) * 0.15;
-      }
-      for (let i = 0; i < SEGMENTS; i++) {
-        currentPositions[i].copy(history[i]);
-      }
-      isInitialized.current = true;
-    }
-
-    // SPATIAL History Buffer (Frame-rate Independent)
-    // Only record history when the head has traveled a specific distance
-    const dist = headPos.distanceTo(history[0]);
-    if (dist > 0.04) {
-      for (let i = MAX_HISTORY - 1; i > 0; i--) {
-        history[i].copy(history[i - 1]);
-      }
-      history[0].copy(headPos);
-    }
-
-    for (let i = 0; i < SEGMENTS; i++) {
-      // Direct 1-to-1 index mapping since history is now uniformly spaced by distance
-      const historyIndex = i;
-      const targetPos = history[Math.min(historyIndex, MAX_HISTORY - 1)];
-
-      if (i === 0) {
-        currentPositions[0].copy(headPos);
-      } else {
-        // 3. True Lerp & Drag Logic (maintaining state across frames)
-        currentPositions[i].lerp(targetPos, 0.3);
-      }
+    // 1. Dynamic Sub-Curve Generation
+    for (let i = 0; i <= 30; i++) {
+      let t = headT - (i / 30) * snakeLength;
+      if (t < 0) t += 1.0;
       
-      dummy.position.copy(currentPositions[i]);
-
-      // 5. Biological Anatomy (Head Tapering)
-      const scale = Math.max(0.01, 0.12 - (i / SEGMENTS) * 0.11);
-      dummy.scale.set(scale, scale, scale);
-
-      // Dynamic Orientation
-      if (i > 0) {
-        const lookIndex = Math.max(0, i - 2);
-        lookAtPos.copy(currentPositions[lookIndex]);
-        dummy.lookAt(lookAtPos);
-      } else {
-        // Head looks forward along curve
-        const futureT = (headT + 0.01) % 1.0;
-        curve.getPointAt(futureT, lookAtPos);
-        lookAtPos.y += Math.sin((time + 0.05) * 5.0) * 0.15;
-        dummy.lookAt(lookAtPos);
-      }
-
-      dummy.updateMatrix();
-
-      if (meshRef.current) {
-        meshRef.current.setMatrixAt(i, dummy.matrix);
-      }
-
-      if (i === 0 && headRef.current) {
-        headRef.current.position.copy(dummy.position);
-        headRef.current.quaternion.copy(dummy.quaternion);
-        
-        const pulse = 1.0 + Math.sin(time * 4.2) * 0.05;
-        const baseHeadScale = scale * 1.24 * pulse;
-        headRef.current.scale.set(baseHeadScale, baseHeadScale, baseHeadScale);
-      }
+      baseCurve.getPointAt(t, bodyPoints[i]);
+      bodyPoints[i].y += Math.sin(time * 5.0 - i * 0.5) * 0.15;
     }
-    
+
+    const subCurve = new THREE.CatmullRomCurve3(bodyPoints, false);
+
+    // 2. Apply to TubeGeometry explicitly
     if (meshRef.current) {
-      meshRef.current.instanceMatrix.needsUpdate = true;
+      const oldGeo = meshRef.current.geometry;
+      const newGeo = new THREE.TubeGeometry(subCurve, 64, 0.12, 8, false);
+      meshRef.current.geometry = newGeo;
+      if (oldGeo) oldGeo.dispose();
+    }
+
+    // 3. Head Integration tracking headT
+    if (headRef.current) {
+      baseCurve.getPointAt(headT, dummyPos);
+      dummyPos.y += Math.sin(time * 5.0) * 0.15; // Match front of subCurve
+      
+      const tangent = baseCurve.getTangentAt(headT);
+      lookAtPos.copy(dummyPos).add(tangent);
+
+      headRef.current.position.copy(dummyPos);
+      headRef.current.lookAt(lookAtPos);
+      
+      const pulse = 1.0 + Math.sin(time * 4.2) * 0.05;
+      const baseHeadScale = 0.12 * 1.24 * pulse;
+      headRef.current.scale.set(baseHeadScale, baseHeadScale, baseHeadScale);
     }
   });
 
   return (
     <group>
-      <instancedMesh ref={meshRef} args={[null, null, SEGMENTS]}>
-        <sphereGeometry ref={instancedGeoRef} args={[1, 16, 16]} />
+      <mesh ref={meshRef}>
+        <tubeGeometry args={[initialSubCurve, 64, 0.12, 8, false]} />
         <meshPhysicalMaterial 
-          ref={instancedMatRef}
           color="#A31616" 
           metalness={0.9}
           roughness={0.1}
           clearcoat={1.0}
           emissive="#2C1414"
           emissiveIntensity={0.2}
+          onBeforeCompile={(shader) => {
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <begin_vertex>',
+              `
+              #include <begin_vertex>
+              
+              // uv.x goes from 0 (head) to 1 (tail).
+              // smoothstep creates a smooth curve starting at 50% down the body, reaching max pinch at the tip.
+              float taperEffect = smoothstep(0.5, 1.0, uv.x);
+              
+              // Squeeze the vertex inward along its normal. 
+              // Using 0.12 to match the exact tube radius.
+              transformed -= objectNormal * (0.12 * taperEffect);
+              `
+            );
+          }}
         />
-      </instancedMesh>
+      </mesh>
       
       <group ref={headRef}>
         <PythonHead />
