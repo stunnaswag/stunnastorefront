@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useEffect, useImperativeHandle } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Image } from '@react-three/drei';
+import { Text, Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
 const SEGMENTS = 350;
@@ -150,19 +150,50 @@ const BiologicalSnake = React.memo(React.forwardRef((props, ref) => {
   );
 }));
 
-const BrandLogo = React.memo(() => {
+const BrandText = React.memo(() => {
   const { size } = useThree();
   const viewportWidth = size.width || 1024;
-  const logoScale = viewportWidth < 768 ? [2.8, 1.15] : [4.4, 1.8];
+  const isMobile = viewportWidth < 768;
+  const groupRef = useRef();
+
+  // Gentle idle rotation to show off the true 3D depth
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.rotation.y = Math.sin(time * 1.5) * 0.15;
+      groupRef.current.rotation.x = Math.sin(time * 0.8) * 0.05;
+    }
+  });
+
+  const dynamicFontSize = isMobile ? 1.2 : 1.8;
+  // Apply a slight horizontal stretch to replicate the image's bounding box
+  const stretchScale = [1.5, 1, 1];
 
   return (
-    <group>
-      <Image
-        url="/logo/logo.png"
-        transparent
-        position={[0, 0, 0]}
-        scale={logoScale}
-      />
+    <group ref={groupRef} scale={stretchScale} position={[0, 0, 0]}>
+      <Center>
+        <Text3D
+          font="/fonts/helvetiker_bold.typeface.json"
+          size={dynamicFontSize}
+          height={0.4}
+          curveSegments={12}
+          bevelEnabled={true}
+          bevelThickness={0.04}
+          bevelSize={0.03}
+          bevelOffset={0}
+          bevelSegments={5}
+        >
+          {`$$$`}
+          <meshPhysicalMaterial 
+            color="#A31616" 
+            metalness={0.5} 
+            roughness={0.2} 
+            clearcoat={0.8}
+            emissive="#A31616"
+            emissiveIntensity={0.2}
+          />
+        </Text3D>
+      </Center>
     </group>
   );
 });
@@ -186,7 +217,7 @@ function SharedScene() {
 
   return (
     <group ref={sharedGroupRef}>
-      <BrandLogo />
+      <BrandText />
       <BiologicalSnake ref={snakeLogicRef} />
     </group>
   );
