@@ -8,7 +8,9 @@ export default function Navbar() {
   const { setIsCartOpen, cartItemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const location = useLocation();
+  const navbarLogoSrc = '/logo/logo.png';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,10 +65,19 @@ export default function Navbar() {
         
         {/* CENTER: Dynamic Brand Logo */}
         <div className="flex-1 flex justify-center">
-          <Link to="/" className="bg-stunna-bg px-4 py-2 rounded-none flex items-center justify-center hover:opacity-70 transition-opacity">
-            <span className="inline-block text-[#8B0000] font-black font-[Impact,Arial_Black,sans-serif] tracking-[-0.15em] leading-none text-1xl md:text-3xl [-webkit-text-stroke:2px_#8B0000] scale-x-[1.3] scale-y-[0.85] origin-center">
-              $$$
-            </span>
+          <Link to="/" className="flex items-center justify-center hover:opacity-70 transition-opacity">
+            {logoFailed ? (
+              <span className="inline-block text-[#8B0000] font-black font-[Impact,Arial_Black,sans-serif] tracking-[-0.15em] leading-none text-2xl md:text-2.5xl [-webkit-text-stroke:2px_#8B0000] scale-x-[1.3] scale-y-[0.85] origin-center">
+                $$$
+              </span>
+            ) : (
+              <img
+                src={navbarLogoSrc}
+                alt="Stunna Swag Season logo"
+                className="h-10 w-auto object-contain md:h-12"
+                onError={() => setLogoFailed(true)}
+              />
+            )}
           </Link>
         </div>
 
