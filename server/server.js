@@ -208,6 +208,51 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ----- GET /sitemap.xml -------------------------------------
+// Dynamically generates an XML sitemap of all active products for Googlebot.
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const baseUrl = process.env.CLIENT_URL || 'https://www.stunnaswagseason.store';
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('slug, created_at')
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    const urls = [
+      { loc: `${baseUrl}/`, changefreq: 'daily', priority: '1.0' },
+      { loc: `${baseUrl}/catalog`, changefreq: 'daily', priority: '0.9' },
+    ];
+
+    if (products) {
+      products.forEach(p => {
+        urls.push({
+          loc: `${baseUrl}/product/${p.slug}`,
+          lastmod: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          changefreq: 'weekly',
+          priority: '0.8'
+        });
+      });
+    }
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(url => `  <url>
+    <loc>${url.loc}</loc>${url.lastmod ? `\n    <lastmod>${url.lastmod}</lastmod>` : ''}
+    <changefreq>${url.changefreq}</changefreq>
+    <priority>${url.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemap);
+  } catch (err) {
+    console.error('Sitemap generation error:', err);
+    res.status(500).end();
+  }
+});
+
 // ----- GET /api/settings/:key -------------------------------
 app.get('/api/settings/:key', async (req, res) => {
   try {
