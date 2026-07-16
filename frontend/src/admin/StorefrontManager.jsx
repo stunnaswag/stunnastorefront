@@ -19,7 +19,7 @@ export default function StorefrontManager({ adminKey, onAuthError }) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/settings/hero').then(res => res.json()),
+      fetch('/api/settings/hero_image').then(res => res.json()),
       fetch('/api/settings/catalog_hero_images').then(res => res.json())
     ])
       .then(([heroData, catalogData]) => {

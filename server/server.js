@@ -212,16 +212,17 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/settings/:key', async (req, res) => {
   try {
     const { key } = req.params;
+    const normalizedKey = key === 'hero' ? 'hero_image' : key;
     const { data, error } = await supabase
       .from('store_settings')
       .select('setting_value')
-      .eq('setting_key', key)
+      .eq('setting_key', normalizedKey)
       .maybeSingle();
 
     if (error) throw error;
     
     if (!data) {
-      if (key === 'hero_image') {
+      if (normalizedKey === 'hero_image') {
         return res.status(200).json({ value: 'https://images.unsplash.com/photo-1617331721458-bd3bd3f9c7f8?q=80&w=2000&auto=format&fit=crop' });
       }
       return res.status(200).json({ value: null });

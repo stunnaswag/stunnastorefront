@@ -27,7 +27,7 @@ export default function Home() {
   const fetchHeroImage = async (signal) => {
     registerRequest();
     try {
-      const res = await fetch('/api/settings/hero', { signal });
+      const res = await fetch('/api/settings/hero_image', { signal });
       if (!res.ok) return;
       
       const json = await res.json();
