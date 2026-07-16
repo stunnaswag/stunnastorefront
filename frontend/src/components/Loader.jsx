@@ -165,7 +165,7 @@ const BrandText = React.memo(() => {
     }
   });
 
-  const dynamicFontSize = isMobile ? 1.2 : 1.8;
+  const dynamicFontSize = isMobile ? 0.2 : 1.8;
   // Apply a slight horizontal stretch to replicate the image's bounding box
   const stretchScale = [1.5, 1, 1];
 
