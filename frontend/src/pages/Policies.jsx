@@ -24,7 +24,17 @@ export default function Policies() {
         <section className="flex flex-col gap-6">
           <h2 className="text-xs uppercase tracking-widest font-medium text-stunna-text/40">ABOUT STUNNA</h2>
           <p className="text-[10px] md:text-xs uppercase tracking-widest text-stunna-text/80 leading-loose">
-            Stunna was founded on the principle of absolute reduction. We strip away the unnecessary to reveal the essential geometry of modern streetwear. Every garment is a structural exercise in avant-garde minimalism, built for those who understand that silence is the loudest statement.
+            Stunna Swag Season is a contemporary streetwear brand founded in January 2026 through the combined vision and creative efforts of Udeh Onyekachukwu Jeremiah and Eze Micheal Tochukwu.
+
+Built on the belief that fashion is more than clothing, Stunna Swag Season represents confidence, individuality, and fearless self-expression. Every collection is designed for people who refuse to blend into the crowd—those who embrace their identity, move with purpose, and wear their ambition with pride.
+
+Inspired by modern street culture, music, art, and youth expression, the brand combines bold aesthetics with meaningful storytelling. Each design is carefully developed to create more than just apparel; it becomes a statement that reflects the mindset of the person wearing it. From clean everyday essentials to standout graphic pieces, every product embodies the spirit of originality and authenticity.
+
+At Stunna Swag Season, quality and creativity go hand in hand. We believe exceptional fashion should not only look good but also inspire confidence and leave a lasting impression. Every release is approached with attention to detail, premium craftsmanship, and a commitment to creating timeless pieces that resonate with a growing global community.
+
+Our mission is to build a culture where people feel empowered to express themselves without limits. We celebrate those who dare to be different, challenge conventions, and pursue greatness on their own terms.
+
+As the brand continues to grow, Stunna Swag Season remains committed to innovation, originality, and building a lasting legacy in the streetwear industry. What began as a shared dream between two creators is evolving into a movement that inspires a new generation to embrace who they are and wear that confidence proudly.
           </p>
         </section>
 

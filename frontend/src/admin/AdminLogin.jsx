@@ -36,7 +36,7 @@ export default function AdminLogin({ onLogin }) {
   return (
     <div className="min-h-screen bg-[#2C1414] flex flex-col items-center justify-center p-6 text-[#EAEAEA] w-full">
       <div className="w-full max-w-sm border-[1px] border-[#EAEAEA]/20 p-12 flex flex-col items-center">
-        <h1 className="text-2xl lowercase tracking-tighter mb-2">stunna</h1>
+        <h1 className="text-2xl lowercase tracking-tighter mb-2">stunna swag season</h1>
         <p className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50 mb-8">SYSTEM AUTHENTICATION</p>
         
         {error && <p className="text-[10px] tracking-widest text-red-400 mb-8 text-center">{error}</p>}

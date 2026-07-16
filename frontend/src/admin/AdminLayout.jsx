@@ -17,7 +17,7 @@ function SidebarContent({ onLogout, onNavigate }) {
     <div className="flex h-full flex-col justify-between">
       <div className="flex flex-col gap-8">
         <div>
-          <h1 className="text-2xl lowercase tracking-tighter mb-2">stunna</h1>
+          <h1 className="text-2xl lowercase tracking-tighter mb-2">stunna swag season</h1>
           <p className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40">SYSADMIN NODE</p>
         </div>
         <nav className="flex flex-col gap-3" aria-label="Admin navigation">
@@ -58,7 +58,7 @@ export default function AdminLayout({ children, onLogout }) {
           <header className="sticky top-0 z-20 border-b border-[#EAEAEA]/10 bg-[#2C1414]/95 backdrop-blur">
             <div className="flex items-center justify-between px-4 py-3">
               <div>
-                <p className="text-[10px] tracking-[0.35em] uppercase text-[#EAEAEA]/40">STUNNA</p>
+                <p className="text-[10px] tracking-[0.35em] uppercase text-[#EAEAEA]/40">STUNNA SWAG SEASON</p>
                 <p className="text-sm font-medium text-[#EAEAEA]">{activeLabel}</p>
               </div>
               <button
@@ -80,7 +80,7 @@ export default function AdminLayout({ children, onLogout }) {
               <div className="ml-auto flex h-full w-72 flex-col bg-[#2C1414] p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
                 <div className="mb-6 flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl lowercase tracking-tighter">stunna</h2>
+                    <h2 className="text-xl lowercase tracking-tighter">stunna swag season</h2>
                     <p className="text-[10px] tracking-[0.3em] uppercase text-[#EAEAEA]/40">SYSADMIN NODE</p>
                   </div>
                   <button aria-label="Close navigation" onClick={() => setDrawerOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#EAEAEA]/20 text-[#EAEAEA]">

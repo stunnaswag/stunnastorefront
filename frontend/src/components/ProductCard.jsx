@@ -23,7 +23,7 @@ const ProductCard = forwardRef(({ product }, ref) => {
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-10 transition-opacity duration-500">
-              <span className="lowercase text-4xl tracking-tighter text-stunna-text">stunna</span>
+              <span className="lowercase text-4xl tracking-tighter text-stunna-text">stunna swag season</span>
             </div>
           )}
         </div>

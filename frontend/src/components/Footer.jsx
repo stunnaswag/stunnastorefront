@@ -25,7 +25,7 @@ export default function Footer() {
         {/* Brand & Mission */}
         <div className="flex flex-col gap-4">
           <Link to="/" className="text-2xl font-normal tracking-tight lowercase text-stunna-text hover:text-stunna-accent transition-colors w-fit">
-            stunna
+            stunna swag season
           </Link>
           <p className="text-[10px] uppercase tracking-widest text-stunna-text/60 max-w-xs leading-loose">
             Avant-garde streetwear engineered for the absolute. Zero compromises. No limits.
@@ -77,7 +77,7 @@ export default function Footer() {
 
       <div className="max-w-[1600px] mx-auto mt-24 flex flex-col md:flex-row justify-between items-center gap-4 border-t-[1px] border-stunna-text/10 pt-8">
         <span className="text-[10px] uppercase tracking-widest text-stunna-text/40">
-          © {new Date().getFullYear()} STUNNA WORLDWIDE.
+          © {new Date().getFullYear()} STUNNA SWAG SEASON.
         </span>
         <span className="text-[10px] uppercase tracking-widest text-stunna-text/40">
           ALL RIGHTS RESERVED.
