@@ -293,7 +293,7 @@ function CameraController() {
 
 export default function Loader() {
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden bg-[#2C1414]">
+    <div className="w-full h-full relative overflow-hidden">
       <div className="absolute inset-0 z-10 pointer-events-none">
         <Canvas
           camera={{ position: [0, 0, 8], fov: 40 }}
@@ -310,12 +310,14 @@ export default function Loader() {
           <spotLight position={[5, 10, 10]} intensity={3} angle={0.4} penumbra={1} color="#EAEAEA" />
           <directionalLight position={[-10, -10, -5]} intensity={4} color="#A31616" />
 
-          <BrandText />
-          <BiologicalSnake />
+          <group position={[0, 0, 0]}>
+            <BrandText />
+            <BiologicalSnake />
+          </group>
         </Canvas>
       </div>
 
-      <span className="text-[10px] uppercase tracking-widest font-medium text-[#EAEAEA]/30 absolute bottom-[5vh] z-20 animate-pulse">
+      <span className="text-[10px] uppercase tracking-widest font-medium text-[#EAEAEA]/30 absolute bottom-[5%] z-20 animate-pulse">
         LOADING EXPERIENCE
       </span>
     </div>

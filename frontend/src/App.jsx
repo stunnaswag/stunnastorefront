@@ -28,7 +28,7 @@ function LoaderOverlay() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="fixed inset-0 z-[999] w-full h-[100dvh] overflow-hidden bg-[#2C1414] flex flex-col items-center justify-center pointer-events-auto"
+          className="fixed inset-0 z-[999] w-full h-full overflow-hidden bg-[#2C1414] flex flex-col items-center justify-center pointer-events-auto"
         >
       <Loader />
     </motion.div>
