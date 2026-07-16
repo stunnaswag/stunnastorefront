@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import { useLoading } from '../context/LoadingContext';
+import SEO from '../components/SEO';
 
 export default function Catalog() {
   const { registerRequest, resolveRequest } = useLoading();
@@ -109,7 +110,7 @@ export default function Catalog() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full min-h-screen bg-stunna-bg">
-      
+      <SEO title="CATALOG | STUNNA" description="Shop the latest archival streetwear from Stunna." />
       {/* FULL-BLEED HERO SLIDESHOW */}
       <div className="w-full h-[70vh] md:h-[75vh] relative overflow-hidden bg-stunna-text/5">
         <AnimatePresence mode="wait">

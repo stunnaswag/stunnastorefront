@@ -28,7 +28,7 @@ export default function Footer() {
             stunna swag season
           </Link>
           <p className="text-[10px] uppercase tracking-widest text-stunna-text/60 max-w-xs leading-loose">
-            Avant-garde streetwear engineered for the absolute. Zero compromises. No limits.
+            Expre$$ yourself, clothing designed to standout be bold, be stunna, be unapologetic. join the cult and embrace the swag season.
           </p>
         </div>
 

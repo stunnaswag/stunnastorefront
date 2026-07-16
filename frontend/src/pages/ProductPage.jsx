@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLoading } from '../context/LoadingContext';
+import SEO from '../components/SEO';
 
 export default function ProductPage() {
   const { registerRequest, resolveRequest } = useLoading();
@@ -93,6 +94,13 @@ export default function ProductPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto">
+      <SEO 
+        title={`${product.name} | STUNNA`}
+        description={product.description}
+        image={product.image_urls?.[0]}
+        url={window.location.href}
+        productSchema={product}
+      />
       <div className="flex flex-col lg:flex-row gap-16 lg:gap-32">
         
         {/* LEFT: EDITORIAL IMAGES */}

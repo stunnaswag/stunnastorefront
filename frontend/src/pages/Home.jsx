@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../context/LoadingContext';
+import SEO from '../components/SEO';
 
 export default function Home() {
   const [heroImage, setHeroImage] = useState(null);
@@ -54,7 +55,7 @@ export default function Home() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-stunna-bg">
-      
+      <SEO title="STUNNA | Archival Streetwear" />
       {/* 1. HERO SECTION */}
       {error ? (
         <div className="w-full h-[50vh] flex items-center justify-center text-stunna-text uppercase tracking-widest text-[10px] border border-stunna-text/10">
