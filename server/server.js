@@ -39,9 +39,15 @@ import { createClient } from '@supabase/supabase-js';
 // 1. ENVIRONMENT VALIDATION
 // ============================================================
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL || 'https://stunnaswagseason.onrender.com';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://www.stunnaswagseason.store';
+const liveProdOrigins = [
+  'https://www.stunnaswagseason.store',
+  'https://stunnaswagseason.store',
+  'https://stunnaswagseason.onrender.com',
+];
 const allowedOrigins = Array.from(new Set([
   CLIENT_URL,
+  ...liveProdOrigins,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
