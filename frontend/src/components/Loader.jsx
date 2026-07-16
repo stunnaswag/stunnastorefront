@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import * as THREE from 'three';
 
-const SEGMENTS = 300;
+const SEGMENTS = 350;
 const BASE_Y = 0;
 
 function PythonHead() {
@@ -86,7 +86,7 @@ const BiologicalSnake = React.memo(React.forwardRef((props, ref) => {
     update: (time) => {
       for (let i = 0; i < SEGMENTS; i++) {
         const segmentT = i / (SEGMENTS - 1);
-        const pathT = (segmentT * 0.52 + time * 0.18) % 1.0;
+        const pathT = (segmentT * 0.62 + time * 0.18) % 1.0;
         const pos = curve.getPointAt(pathT);
 
         const slitherWave = Math.sin(pathT * Math.PI * 8 - time * 4.2) * 0.16;
