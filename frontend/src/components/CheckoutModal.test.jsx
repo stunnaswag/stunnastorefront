@@ -106,4 +106,46 @@ describe('CheckoutModal settings resilience', () => {
       expect(request.body).toContain('"shipping_cost":1500');
     });
   });
+
+  it('normalizes the legacy promo shape from the admin settings and applies it in checkout', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url === '/api/settings/bank_details') {
+        return Promise.resolve({ json: async () => ({ value: '{"bank_name":"Test Bank","account_number":"123456","account_name":"Test Account"}' }) });
+      }
+
+      if (url === '/api/settings/delivery_zones') {
+        return Promise.resolve({ json: async () => ({ value: [{ name: 'Lagos', fee: 1500 }] }) });
+      }
+
+      if (url === '/api/settings/promo_codes') {
+        return Promise.resolve({ json: async () => ({ value: [{ code: 'STUNNA20', discount_percent: 20, is_active: true }] }) });
+      }
+
+      if (url === '/api/checkout/manual') {
+        return Promise.resolve({ ok: true, json: async () => ({ success: true, orderId: 'ord-123' }) });
+      }
+
+      return Promise.resolve({ json: async () => ({}) });
+    });
+
+    const { container } = render(
+      <CartProvider>
+        <CheckoutModal
+          cart={[]}
+          totalAmount={1000}
+          onClose={() => {}}
+          onSuccess={() => {}}
+        />
+      </CartProvider>
+    );
+
+    await screen.findByText(/test bank/i);
+
+    fireEvent.change(screen.getByPlaceholderText(/promo code/i), { target: { value: 'STUNNA20' } });
+    fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/applied promo: STUNNA20/i)).toBeInTheDocument();
+    });
+  });
 });

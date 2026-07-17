@@ -115,7 +115,7 @@ async function sendBrevoEmail(toEmail, subject, htmlContent) {
       'api-key': apiKey,
     },
     body: JSON.stringify({
-      sender: { name: 'Stunna Worldwide', email: 'info@stunnaswagseason.store' },
+      sender: { name: '$$$', email: 'info@stunnaswagseason.store' },
       to: [{ email: toEmail }],
       replyTo: { email: process.env.SUPPORT_EMAIL || 'info@stunnaswagseason.store' },
       subject,
@@ -598,7 +598,7 @@ app.post('/api/checkout', async (req, res) => {
 
 // ----- POST /api/checkout/manual ----------------------------
 app.post('/api/checkout/manual', async (req, res) => {
-  const { customer_email, customer_name, customer_phone, shipping_address, cart, payment_proof_base64, shipping_cost = 0 } = req.body;
+  const { customer_email, customer_name, customer_phone, shipping_address, cart, payment_proof_base64, shipping_cost = 0, discount_amount = 0 } = req.body;
 
   if (!customer_email || !customer_name || !cart || !cart.length || !payment_proof_base64) {
     return res.status(400).json({ success: false, message: 'Missing required checkout fields or payment proof.' });
@@ -670,7 +670,7 @@ app.post('/api/checkout/manual', async (req, res) => {
       });
     }
 
-    const finalTotalAmount = Number(serverTotalAmount) + Number(shipping_cost || 0);
+    const finalTotalAmount = Math.max(0, Number(serverTotalAmount) - Number(discount_amount || 0)) + Number(shipping_cost || 0);
     let createdOrderId = null;
 
     // 3. Create the Order with 'manual_pending'
@@ -733,7 +733,7 @@ app.post('/api/checkout/manual', async (req, res) => {
             <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
             <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${createdOrderId}</p>
           </div>
-          <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+          <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
         </div>
         `
       );
@@ -1360,7 +1360,7 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
                 <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
                 <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
               </div>
-              <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+              <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
             </div>
             `
           );
@@ -1378,7 +1378,7 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
                 <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
               </div>
               ${verification_notes ? `<div style="background:#1a0000;border:1px solid #440000;padding:20px;margin:0 0 32px"><p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">REASON</p><p style="font-size:14px;color:#ff6666;margin:0">${verification_notes}</p></div>` : ''}
-              <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+              <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
             </div>
             `
           );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 
 export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess }) {
-  const { setShippingCost, setPromoCode, promoCode, shippingCost } = useCart();
+  const { setShippingCost, setPromoCode, promoCode, shippingCost, promoDiscount } = useCart();
   const displayedTotalAmount = Number(totalAmount || 0) + Number(shippingCost || 0);
 
   const normalizeSettingValue = (value) => {
@@ -25,6 +25,21 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
     if (Array.isArray(normalized.zones)) return normalized.zones;
     if (Array.isArray(normalized.codes)) return normalized.codes;
     return [normalized];
+  };
+
+  const normalizePromoCode = (promo) => {
+    if (!promo || typeof promo !== 'object') return null;
+
+    const discountValue = promo.discount_value ?? promo.discount_percent ?? promo.discount ?? 0;
+    const discountType = promo.discount_type || (promo.discount_percent !== undefined ? 'percentage' : 'fixed');
+
+    return {
+      ...promo,
+      code: promo.code?.toUpperCase?.() || promo.code,
+      discount_type: discountType,
+      discount_value: Number(discountValue),
+      is_active: promo.is_active ?? true,
+    };
   };
   
   const [formData, setFormData] = useState({
@@ -58,7 +73,9 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
       const normalizedZones = normalizeSettingList(zonesRes?.value);
       setDeliveryZones(normalizedZones);
 
-      const normalizedPromo = normalizeSettingList(promoRes?.value);
+      const normalizedPromo = normalizeSettingList(promoRes?.value)
+        .map(normalizePromoCode)
+        .filter(Boolean);
       setPromoCodes(normalizedPromo);
     }).catch(err => console.error("Failed to fetch settings:", err));
   }, []);
@@ -103,9 +120,13 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
   const handleApplyPromo = (e) => {
     e.preventDefault();
     if (!inputPromo.trim()) return;
-    const found = promoCodes.find(p => p.code.toUpperCase() === inputPromo.toUpperCase() && p.is_active);
+
+    const normalizedInput = inputPromo.trim().toUpperCase();
+    const found = promoCodes.find(p => p.code === normalizedInput && p.is_active !== false);
+
     if (found) {
-      setPromoCode(found);
+      const normalizedPromo = normalizePromoCode(found);
+      setPromoCode(normalizedPromo);
       setError(null);
     } else {
       setError('INVALID OR INACTIVE PROMO CODE');
@@ -129,7 +150,9 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
         body: JSON.stringify({
           ...formData,
           cart,
-          shipping_cost: shippingCost
+          shipping_cost: shippingCost,
+          discount_amount: promoDiscount || 0,
+          promo_code: promoCode?.code || null
         })
       });
       
@@ -284,7 +307,8 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
           </div>
 
           <button 
-            type="submit" 
+            type="button"
+            onClick={handleSubmit}
             disabled={loading || proofPreparing || !formData.payment_proof_base64}
             className="mt-6 border-[1px] border-stunna-text py-4 text-[10px] tracking-widest uppercase font-medium hover:bg-stunna-text hover:text-stunna-bg transition-colors disabled:opacity-50 text-stunna-text"
           >

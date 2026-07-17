@@ -127,11 +127,15 @@ export function CartProvider({ children }) {
 
   const promoDiscount = useMemo(() => {
     if (!promoCode) return 0;
-    if (promoCode.discount_type === 'percentage') {
-      return cartSubtotal * (promoCode.discount_value / 100);
-    } else {
-      return promoCode.discount_value;
+
+    const discountType = promoCode.discount_type || (promoCode.discount_percent !== undefined ? 'percentage' : 'fixed');
+    const discountValue = Number(promoCode.discount_value ?? promoCode.discount_percent ?? 0);
+
+    if (discountType === 'percentage') {
+      return cartSubtotal * (discountValue / 100);
     }
+
+    return discountValue;
   }, [cartSubtotal, promoCode]);
 
   const cartTotal = useMemo(() => {

@@ -83,9 +83,12 @@ export default function SettingsView({ adminKey, onAuthError }) {
 
   const handleAddPromo = () => {
     if (!newPromo.code || !newPromo.discount_percent) return;
-    setPromoCodes([...promoCodes, { 
-      code: newPromo.code, 
-      discount_percent: Number(newPromo.discount_percent) 
+
+    setPromoCodes([...promoCodes, {
+      code: newPromo.code.trim().toUpperCase(),
+      discount_type: 'percentage',
+      discount_value: Number(newPromo.discount_percent),
+      is_active: true,
     }]);
     setNewPromo({ code: '', discount_percent: '' });
   };
@@ -242,7 +245,9 @@ export default function SettingsView({ adminKey, onAuthError }) {
                 <div key={i} className="flex items-center justify-between border-[1px] border-stunna-text/20 p-4">
                   <div className="flex gap-8">
                     <span className="text-xs font-bold uppercase tracking-widest">{promo.code}</span>
-                    <span className="text-xs uppercase tracking-widest text-stunna-text/70">{promo.discount_percent}% OFF</span>
+                    <span className="text-xs uppercase tracking-widest text-stunna-text/70">
+                      {(promo.discount_value ?? promo.discount_percent ?? 0)}{promo.discount_type === 'fixed' ? ' NGN' : '%'} OFF
+                    </span>
                   </div>
                   <button onClick={() => handleRemovePromo(i)} className="text-xs font-bold uppercase text-red-500 hover:text-red-400">X</button>
                 </div>

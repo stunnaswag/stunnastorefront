@@ -197,7 +197,7 @@ export default function CartDrawer() {
             {isCheckoutOpen && (
             <CheckoutModal 
               cart={cart}
-              totalAmount={cartTotal}
+              totalAmount={Math.max(0, cartSubtotal - promoDiscount)}
               onClose={() => setIsCheckoutOpen(false)} 
               onSuccess={(orderId) => {
                 setIsCheckoutOpen(false);
