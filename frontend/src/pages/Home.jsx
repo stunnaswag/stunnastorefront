@@ -10,19 +10,37 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [email, setEmail] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterError, setNewsletterError] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const navigate = useNavigate();
   const { registerRequest, resolveRequest } = useLoading();
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setNewsletterLoading(true);
-    setTimeout(() => {
-      setNewsletterLoading(false);
+    setNewsletterError(null);
+
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Subscription failed.');
+      }
+
+      setEmail('');
       setIsSubscribed(true);
-    }, 1000);
+    } catch (err) {
+      setNewsletterError(err.message || 'Subscription failed.');
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   const fetchHeroImage = async (signal) => {
@@ -93,8 +111,12 @@ export default function Home() {
               disabled={newsletterLoading}
               className="w-full rounded-full border border-stunna-text/20 bg-transparent px-8 py-4 text-[10px] uppercase tracking-widest outline-none focus:border-stunna-text/50 transition-colors"
             />
+            {newsletterError && (
+              <p className="mt-3 text-[10px] uppercase tracking-widest text-red-500">{newsletterError}</p>
+            )}
             <button 
               type="submit"
+              aria-label="Subscribe"
               disabled={newsletterLoading || !email}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-stunna-text/60 hover:text-stunna-text transition-colors disabled:opacity-30"
             >

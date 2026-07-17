@@ -5,17 +5,35 @@ import { ArrowRight, Check, X } from 'lucide-react';
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Subscription failed.');
+      }
+
+      setEmail('');
       setIsSubscribed(true);
-    }, 1000);
+    } catch (err) {
+      setError(err.message || 'Subscription failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,8 +77,12 @@ export default function Footer() {
                 disabled={loading}
                 className="w-full bg-transparent border-[1px] rounded-full px-6 py-3 text-[10px] uppercase tracking-widest focus:outline-none transition-colors placeholder:text-stunna-text/30 border-stunna-text/20 text-stunna-text focus:border-stunna-text"
               />
+              {error && (
+                <p className="mt-2 text-[10px] uppercase tracking-widest text-red-500">{error}</p>
+              )}
               <button 
                 type="submit"
+                aria-label="Subscribe"
                 disabled={loading || !email}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:opacity-50 transition-opacity disabled:opacity-30"
               >
