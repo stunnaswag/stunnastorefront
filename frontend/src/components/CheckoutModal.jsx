@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 
 export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess }) {
-  const { setShippingCost, setPromoCode, promoCode } = useCart();
+  const { setShippingCost, setPromoCode, promoCode, shippingCost } = useCart();
+  const displayedTotalAmount = Number(totalAmount || 0) + Number(shippingCost || 0);
 
   const normalizeSettingValue = (value) => {
     if (!value) return null;
@@ -36,6 +37,7 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
   });
   
   const [loading, setLoading] = useState(false);
+  const [proofPreparing, setProofPreparing] = useState(false);
   const [error, setError] = useState(null);
   
   const [bankDetails, setBankDetails] = useState(null);
@@ -61,6 +63,16 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
     }).catch(err => console.error("Failed to fetch settings:", err));
   }, []);
 
+  useEffect(() => {
+    if (!formData.shipping_zone) {
+      setShippingCost(0);
+      return;
+    }
+
+    const selectedZone = deliveryZones.find(zone => zone.name === formData.shipping_zone);
+    setShippingCost(selectedZone ? selectedZone.fee : 0);
+  }, [deliveryZones, formData.shipping_zone, setShippingCost]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -75,13 +87,16 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProofPreparing(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, payment_proof_base64: reader.result }));
+        setProofPreparing(false);
       };
       reader.readAsDataURL(file);
     } else {
       setFormData(prev => ({ ...prev, payment_proof_base64: '' }));
+      setProofPreparing(false);
     }
   };
 
@@ -113,7 +128,8 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          cart
+          cart,
+          shipping_cost: shippingCost
         })
       });
       
@@ -167,7 +183,7 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
           )}
           <div className="flex justify-between items-center text-[10px] tracking-widest uppercase mt-4 pt-4 border-t-[1px] border-stunna-text/10">
             <span>TOTAL AMOUNT DUE:</span>
-            <strong className="text-green-500/80">₦{totalAmount.toLocaleString()}</strong>
+            <strong className="text-green-500/80">₦{displayedTotalAmount.toLocaleString()}</strong>
           </div>
         </div>
 
@@ -269,10 +285,10 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || proofPreparing || !formData.payment_proof_base64}
             className="mt-6 border-[1px] border-stunna-text py-4 text-[10px] tracking-widest uppercase font-medium hover:bg-stunna-text hover:text-stunna-bg transition-colors disabled:opacity-50 text-stunna-text"
           >
-            {loading ? 'PROCESSING...' : 'SUBMIT PAYMENT FOR VERIFICATION'}
+            {loading ? 'PROCESSING...' : proofPreparing ? 'PREPARING PROOF...' : 'SUBMIT PAYMENT FOR VERIFICATION'}
           </button>
         </form>
       </div>

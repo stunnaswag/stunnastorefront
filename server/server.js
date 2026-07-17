@@ -485,7 +485,7 @@ app.get('/api/orders/:id', async (req, res) => {
 
 // ----- POST /api/checkout -----------------------------------
 app.post('/api/checkout', async (req, res) => {
-  const { customer_email, customer_name, customer_phone, shipping_address, cart, paystack_reference } = req.body;
+  const { customer_email, customer_name, customer_phone, shipping_address, cart, paystack_reference, shipping_cost = 0 } = req.body;
 
   if (!customer_email || !customer_name || !cart || !cart.length) {
     return res.status(400).json({ success: false, message: 'Missing required checkout fields.' });
@@ -531,6 +531,8 @@ app.post('/api/checkout', async (req, res) => {
 
     let createdOrderId = null;
 
+    const finalTotalAmount = Number(serverTotalAmount) + Number(shipping_cost || 0);
+
     // 2. Create the Order with server-calculated total and 'pending' status
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -539,7 +541,7 @@ app.post('/api/checkout', async (req, res) => {
         customer_name,
         customer_phone,
         shipping_address,
-        total_amount: serverTotalAmount,
+        total_amount: finalTotalAmount,
         payment_status: 'pending',
         paystack_reference: paystack_reference || `MOCK-${Date.now()}`
       }])
@@ -571,7 +573,7 @@ app.post('/api/checkout', async (req, res) => {
 
 // ----- POST /api/checkout/manual ----------------------------
 app.post('/api/checkout/manual', async (req, res) => {
-  const { customer_email, customer_name, customer_phone, shipping_address, cart, payment_proof_base64 } = req.body;
+  const { customer_email, customer_name, customer_phone, shipping_address, cart, payment_proof_base64, shipping_cost = 0 } = req.body;
 
   if (!customer_email || !customer_name || !cart || !cart.length || !payment_proof_base64) {
     return res.status(400).json({ success: false, message: 'Missing required checkout fields or payment proof.' });
@@ -643,6 +645,7 @@ app.post('/api/checkout/manual', async (req, res) => {
       });
     }
 
+    const finalTotalAmount = Number(serverTotalAmount) + Number(shipping_cost || 0);
     let createdOrderId = null;
 
     // 3. Create the Order with 'manual_pending'
@@ -653,7 +656,7 @@ app.post('/api/checkout/manual', async (req, res) => {
         customer_name,
         customer_phone,
         shipping_address,
-        total_amount: serverTotalAmount,
+        total_amount: finalTotalAmount,
         payment_status: 'manual_pending',
         paystack_reference: `MANUAL-${Date.now()}`,
         payment_proof_url

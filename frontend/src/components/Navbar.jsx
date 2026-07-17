@@ -59,7 +59,7 @@ export default function Navbar() {
             <Link to="/" className={`text-[10px] uppercase tracking-widest font-medium hover:opacity-50 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>HOME</Link>
             <Link to="/catalog" className={`text-[10px] uppercase tracking-widest font-medium hover:opacity-50 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>CATALOG</Link>
             <Link to="/policies" className={`text-[10px] uppercase tracking-widest font-medium hover:opacity-50 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>POLICIES</Link>
-            <a href="mailto:support@stunnaworldwide.com" className={`text-[10px] uppercase tracking-widest font-medium hover:opacity-50 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>CONTACT</a>
+            <a href="mailto:info@stunnaswagseason.store" className={`text-[10px] uppercase tracking-widest font-medium hover:opacity-50 transition-opacity ${isScrolled ? 'text-stunna-text' : 'text-white'}`}>CONTACT</a>
           </div>
         </div>
         
@@ -122,7 +122,7 @@ export default function Navbar() {
               <Link to="/policies" className="text-5xl uppercase tracking-tighter font-medium text-stunna-text hover:text-stunna-accent transition-colors">
                 POLICIES
               </Link>
-              <a href="mailto:support@stunnaworldwide.com" className="text-5xl uppercase tracking-tighter font-medium text-stunna-text hover:text-stunna-accent transition-colors">
+              <a href="mailto:info@stunnaswagseason.store" className="text-5xl uppercase tracking-tighter font-medium text-stunna-text hover:text-stunna-accent transition-colors">
                 CONTACT
               </a>
             </div>
