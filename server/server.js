@@ -957,6 +957,24 @@ app.patch('/api/admin/variants/:id/stock', requireAdmin, async (req, res) => {
   }
 });
 
+// ----- DELETE /api/admin/variants/:id -------------------
+app.delete('/api/admin/variants/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('variants')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, message: 'Variant deleted successfully' });
+  } catch (error) {
+    console.error('Admin DELETE Variant Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete variant', details: error.message });
+  }
+});
+
 // ----- PATCH /api/admin/orders/:id/fulfillment-status --------
 app.patch('/api/admin/orders/:id/fulfillment-status', requireAdmin, async (req, res) => {
   try {

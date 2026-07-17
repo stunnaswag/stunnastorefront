@@ -5,6 +5,7 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
   const [color, setColor] = useState('');
   const [stock, setStock] = useState('');
   const [updatingStockId, setUpdatingStockId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [newStockValues, setNewStockValues] = useState({});
 
   const handleAddVariant = async (e) => {
@@ -52,6 +53,26 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
     }
   };
 
+  const handleDeleteVariant = async (variantId) => {
+    if (!window.confirm("Are you sure you want to delete this variant? This action cannot be undone.")) return;
+    
+    setDeletingId(variantId);
+    try {
+      const res = await fetch(`/api/admin/variants/${variantId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` }
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.details || json.error || 'Failed to delete variant');
+      
+      onVariantUpdate();
+    } catch (err) {
+      window.alert(`ERROR: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="mt-8 border-t-[1px] border-stunna-text/20 pt-8">
       <h3 className="text-[10px] tracking-widest uppercase font-medium text-stunna-text/50 mb-6">PHYSICAL INVENTORY (VARIANTS)</h3>
@@ -61,12 +82,12 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
         <div className="flex flex-col gap-4 mb-8">
           {variants.map(v => (
             <div key={v.id} className="flex flex-col md:flex-row items-center justify-between border-[1px] border-stunna-text/10 p-4 gap-4 bg-stunna-text/5">
-              <div className="flex gap-6 text-[10px] tracking-widest uppercase text-stunna-text/70">
+              <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-6 text-[10px] tracking-widest uppercase text-stunna-text/70">
                 <span>SIZE: <strong className="text-stunna-text">{v.size}</strong></span>
                 <span>COLOR: <strong className="text-stunna-text">{v.color || 'N/A'}</strong></span>
                 <span>CUR. STOCK: <strong className="text-stunna-text">{v.stock}</strong></span>
               </div>
-              <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto">
                 <input 
                   type="number" 
                   min="0"
@@ -80,6 +101,13 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
                   className="border-[1px] border-stunna-text/20 px-4 py-2 text-[10px] tracking-widest uppercase hover:bg-stunna-text hover:text-stunna-bg transition-colors disabled:opacity-50 text-stunna-text"
                 >
                   {updatingStockId === v.id ? 'SYNCING...' : 'UPDATE'}
+                </button>
+                <button 
+                  onClick={() => handleDeleteVariant(v.id)}
+                  disabled={deletingId === v.id}
+                  className="border-[1px] border-red-500/50 text-red-500 px-4 py-2 text-[10px] tracking-widest uppercase hover:bg-red-500 hover:text-stunna-bg transition-colors disabled:opacity-50"
+                >
+                  {deletingId === v.id ? 'DEL...' : 'DELETE'}
                 </button>
               </div>
             </div>
