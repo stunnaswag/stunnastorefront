@@ -11,6 +11,18 @@ export default function OrdersView({ adminKey, onAuthError }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const isMobile = useIsMobile();
 
+  const formatShippingAddress = (shippingAddress) => {
+    if (!shippingAddress) return 'N/A';
+    if (typeof shippingAddress === 'string') return shippingAddress;
+
+    return [
+      shippingAddress.street,
+      shippingAddress.city,
+      shippingAddress.state,
+      shippingAddress.country,
+    ].filter(Boolean).join(', ');
+  };
+
   const fetchOrders = useCallback(() => {
     setLoading(true);
     fetch('/api/admin/orders', { headers: { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` } })
@@ -63,6 +75,14 @@ export default function OrdersView({ adminKey, onAuthError }) {
                   <dd className="text-right font-medium text-[#EAEAEA]">{o.customer_email}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
+                  <dt className="text-[#EAEAEA]/40">PHONE</dt>
+                  <dd className="text-right">{o.customer_phone || 'N/A'}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-[#EAEAEA]/40">SHIPPING</dt>
+                  <dd className="text-right max-w-[50%] break-words">{formatShippingAddress(o.shipping_address)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
                   <dt className="text-[#EAEAEA]/40">TOTAL</dt>
                   <dd>₦{o.total_amount.toLocaleString()}</dd>
                 </div>
@@ -99,6 +119,8 @@ export default function OrdersView({ adminKey, onAuthError }) {
               <tr className="border-b-[1px] border-[#EAEAEA]/10">
                 <th className="py-4 font-normal text-[#EAEAEA]/30">ID</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">CUSTOMER EMAIL</th>
+                <th className="py-4 font-normal text-[#EAEAEA]/30">PHONE</th>
+                <th className="py-4 font-normal text-[#EAEAEA]/30">SHIPPING</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">TOTAL AMOUNT</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">PROOF</th>
                 <th className="py-4 font-normal text-[#EAEAEA]/30">FULFILLMENT</th>
@@ -110,6 +132,8 @@ export default function OrdersView({ adminKey, onAuthError }) {
                 <tr key={o.id} className="border-b-[1px] border-[#EAEAEA]/5 hover:bg-[#EAEAEA]/5 transition-colors">
                   <td className="py-5 pr-4 text-[#EAEAEA]/50">{o.id.split('-')[0]}...</td>
                   <td className="py-5 pr-4 text-[#EAEAEA] font-medium">{o.customer_email}</td>
+                  <td className="py-5 pr-4 text-[#EAEAEA]/70">{o.customer_phone || 'N/A'}</td>
+                  <td className="py-5 pr-4 text-[#EAEAEA]/70 max-w-[220px] break-words">{formatShippingAddress(o.shipping_address)}</td>
                   <td className="py-5 pr-4 text-[#EAEAEA]/70">₦{o.total_amount.toLocaleString()}</td>
                   <td className="py-5 pr-4">
                     {o.payment_proof_url ? (

@@ -95,6 +95,45 @@ const supabase = createClient(
 );
 
 // ============================================================
+// 2b. BREVO EMAIL SERVICE (REST API)
+// ============================================================
+// Uses native fetch to call the Brevo transactional email API.
+// This avoids nodemailer/SMTP which is blocked on Render free tier.
+
+async function sendBrevoEmail(toEmail, subject, htmlContent) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.warn('⚠️  BREVO_API_KEY not set — skipping email.');
+    return null;
+  }
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'content-type': 'application/json',
+      'api-key': apiKey,
+    },
+    body: JSON.stringify({
+      sender: { name: 'Stunna Worldwide', email: 'info@stunnaswagseason.store' },
+      to: [{ email: toEmail }],
+      replyTo: { email: process.env.SUPPORT_EMAIL || 'info@stunnaswagseason.store' },
+      subject,
+      htmlContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Brevo API error ${response.status}: ${errorBody}`);
+  }
+
+  const data = await response.json();
+  console.log(`📧 Email sent to ${toEmail} | Subject: "${subject}" | MessageId: ${data.messageId}`);
+  return data;
+}
+
+// ============================================================
 // 3. EXPRESS SETUP
 // ============================================================
 
@@ -641,6 +680,28 @@ app.post('/api/checkout/manual', async (req, res) => {
       throw insertError;
     }
 
+    // 6. Send "Order Pending" confirmation email (non-blocking)
+    try {
+      await sendBrevoEmail(
+        customer_email,
+        'STUNNA — ORDER PENDING',
+        `
+        <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
+          <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
+          <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">ORDER RECEIVED.</p>
+          <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR MANUAL PAYMENT IS PENDING VERIFICATION.<br/>WE WILL NOTIFY YOU ONCE IT HAS BEEN REVIEWED.</p>
+          <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
+            <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+            <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${createdOrderId}</p>
+          </div>
+          <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+        </div>
+        `
+      );
+    } catch (emailError) {
+      console.error('Failed to send order confirmation email:', emailError.message);
+    }
+
     res.status(200).json({ success: true, orderId: createdOrderId });
   } catch (error) {
     console.error('Manual Checkout Transaction Error:', error);
@@ -788,7 +849,7 @@ app.get('/api/admin/orders', requireAdmin, async (_req, res) => {
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
-        id, customer_email, customer_name, total_amount, payment_status, fulfillment_status, tracking_number, fulfilled_at, created_at, payment_proof_url,
+        id, customer_email, customer_name, customer_phone, shipping_address, total_amount, payment_status, fulfillment_status, tracking_number, fulfilled_at, created_at, payment_proof_url,
         order_items ( id, variant_id, product_name, variant_label, quantity, price_at_purchase )
       `)
       .order('created_at', { ascending: false });
@@ -1207,6 +1268,57 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
           if (stockError) console.error('Failed to deduct stock for verified payment:', stockError);
         }
       }
+    }
+
+    // 5. Send verification result email (non-blocking)
+    try {
+      // Fetch the customer email from the order
+      const { data: orderData, error: orderFetchError } = await supabase
+        .from('orders')
+        .select('customer_email, id')
+        .eq('id', payment.order_id)
+        .single();
+
+      if (!orderFetchError && orderData?.customer_email) {
+        if (status === 'Verified') {
+          await sendBrevoEmail(
+            orderData.customer_email,
+            'STUNNA — PAYMENT VERIFIED',
+            `
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
+              <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
+              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">PAYMENT SUCCESSFUL.</p>
+              <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR ORDER IS NOW BEING PROCESSED.<br/>YOU WILL RECEIVE TRACKING INFORMATION ONCE YOUR ORDER HAS SHIPPED.</p>
+              <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
+                <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+                <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
+              </div>
+              <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+            </div>
+            `
+          );
+        } else if (status === 'Rejected') {
+          await sendBrevoEmail(
+            orderData.customer_email,
+            'STUNNA — PAYMENT REJECTED',
+            `
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
+              <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
+              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">PAYMENT COULD NOT BE VERIFIED.</p>
+              <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR MANUAL PAYMENT WAS NOT APPROVED.<br/>PLEASE CONTACT US AT <a href="mailto:info@stunnaswagseason.store" style="color:#fff;text-decoration:underline">INFO@STUNNASWAGSEASON.STORE</a> FOR FURTHER ASSISTANCE.</p>
+              <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
+                <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+                <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
+              </div>
+              ${verification_notes ? `<div style="background:#1a0000;border:1px solid #440000;padding:20px;margin:0 0 32px"><p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">REASON</p><p style="font-size:14px;color:#ff6666;margin:0">${verification_notes}</p></div>` : ''}
+              <p style="font-size:12px;color:#666;margin:0">STUNNA WORLDWIDE — STUNNASWAGSEASON.STORE</p>
+            </div>
+            `
+          );
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError.message);
     }
 
     res.status(200).json({ success: true, data: updatedPayment });

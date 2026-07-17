@@ -5,12 +5,14 @@ import { motion } from 'framer-motion';
 
 export default function OrderConfirmation() {
   const { id } = useParams();
-  const { withLoading } = useLoading();
+  const { registerRequest, resolveRequest } = useLoading();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    withLoading(async () => {
+    registerRequest();
+
+    const fetchOrder = async () => {
       try {
         const response = await fetch(`/api/orders/${id}`);
         const data = await response.json();
@@ -22,9 +24,13 @@ export default function OrderConfirmation() {
         setOrder(data.data);
       } catch (err) {
         setError(err.message);
+      } finally {
+        resolveRequest();
       }
-    });
-  }, [id, withLoading]);
+    };
+
+    fetchOrder();
+  }, [id, registerRequest, resolveRequest]);
 
   if (error) {
     return (

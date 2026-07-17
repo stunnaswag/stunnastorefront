@@ -3,6 +3,15 @@ import { useCart } from '../context/CartContext';
 
 export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess }) {
   const { setShippingCost, setPromoCode, promoCode } = useCart();
+
+  const normalizeSettingList = (value) => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    if (Array.isArray(value.items)) return value.items;
+    if (Array.isArray(value.zones)) return value.zones;
+    if (Array.isArray(value.codes)) return value.codes;
+    return [value];
+  };
   
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -28,9 +37,9 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
       fetch('/api/settings/delivery_zones').then(r => r.json()),
       fetch('/api/settings/promo_codes').then(r => r.json())
     ]).then(([bankRes, zonesRes, promoRes]) => {
-      if (bankRes.value) setBankDetails(bankRes.value);
-      if (zonesRes.value) setDeliveryZones(zonesRes.value);
-      if (promoRes.value) setPromoCodes(promoRes.value);
+      if (bankRes?.value) setBankDetails(bankRes.value);
+      if (zonesRes?.value) setDeliveryZones(normalizeSettingList(zonesRes.value));
+      if (promoRes?.value) setPromoCodes(normalizeSettingList(promoRes.value));
     }).catch(err => console.error("Failed to fetch settings:", err));
   }, []);
 
@@ -183,13 +192,12 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
           />
           
           <select
-            required
             name="shipping_zone"
             value={formData.shipping_zone}
             onChange={handleZoneChange}
             className="bg-transparent border-b-[1px] border-stunna-text/20 p-2 text-[10px] tracking-widest uppercase text-stunna-text focus:outline-none focus:border-stunna-text placeholder:text-stunna-text/30 cursor-pointer"
           >
-            <option value="" className="bg-stunna-bg text-stunna-text">SELECT SHIPPING ZONE</option>
+            <option value="" className="bg-stunna-bg text-stunna-text">SELECT SHIPPING ZONE (OPTIONAL)</option>
             {deliveryZones.map(zone => (
               <option key={zone.name} value={zone.name} className="bg-stunna-bg text-stunna-text">
                 {zone.name} (₦{zone.fee.toLocaleString()})
