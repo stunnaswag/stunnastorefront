@@ -8,7 +8,7 @@ describe('CheckoutModal settings resilience', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn((url) => {
       if (url === '/api/settings/bank_details') {
-        return Promise.resolve({ json: async () => ({ value: { bank_name: 'Test Bank', account_number: '123456', account_name: 'Test Account' } }) });
+        return Promise.resolve({ json: async () => ({ value: '{"bank_name":"Test Bank","account_number":"123456","account_name":"Test Account"}' }) });
       }
 
       if (url === '/api/settings/delivery_zones') {
@@ -27,7 +27,7 @@ describe('CheckoutModal settings resilience', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the checkout form instead of crashing when delivery zones are returned as a single object', async () => {
+  it('renders bank details and the checkout form when settings are returned as stringified objects', async () => {
     render(
       <CartProvider>
         <CheckoutModal
@@ -40,6 +40,8 @@ describe('CheckoutModal settings resilience', () => {
     );
 
     expect(await screen.findByText(/secure checkout/i)).toBeInTheDocument();
+    expect(screen.getByText(/test bank/i)).toBeInTheDocument();
+    expect(screen.getByText(/test account/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/full name/i)).toBeInTheDocument();
   });
 });

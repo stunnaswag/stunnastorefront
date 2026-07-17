@@ -4,13 +4,26 @@ import { useCart } from '../context/CartContext';
 export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess }) {
   const { setShippingCost, setPromoCode, promoCode } = useCart();
 
+  const normalizeSettingValue = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  };
+
   const normalizeSettingList = (value) => {
-    if (Array.isArray(value)) return value;
-    if (!value || typeof value !== 'object') return [];
-    if (Array.isArray(value.items)) return value.items;
-    if (Array.isArray(value.zones)) return value.zones;
-    if (Array.isArray(value.codes)) return value.codes;
-    return [value];
+    const normalized = normalizeSettingValue(value);
+    if (Array.isArray(normalized)) return normalized;
+    if (!normalized || typeof normalized !== 'object') return [];
+    if (Array.isArray(normalized.items)) return normalized.items;
+    if (Array.isArray(normalized.zones)) return normalized.zones;
+    if (Array.isArray(normalized.codes)) return normalized.codes;
+    return [normalized];
   };
   
   const [formData, setFormData] = useState({
@@ -37,9 +50,14 @@ export default function CheckoutModal({ cart, totalAmount, onClose, onSuccess })
       fetch('/api/settings/delivery_zones').then(r => r.json()),
       fetch('/api/settings/promo_codes').then(r => r.json())
     ]).then(([bankRes, zonesRes, promoRes]) => {
-      if (bankRes?.value) setBankDetails(bankRes.value);
-      if (zonesRes?.value) setDeliveryZones(normalizeSettingList(zonesRes.value));
-      if (promoRes?.value) setPromoCodes(normalizeSettingList(promoRes.value));
+      const normalizedBank = normalizeSettingValue(bankRes?.value);
+      if (normalizedBank) setBankDetails(normalizedBank);
+
+      const normalizedZones = normalizeSettingList(zonesRes?.value);
+      setDeliveryZones(normalizedZones);
+
+      const normalizedPromo = normalizeSettingList(promoRes?.value);
+      setPromoCodes(normalizedPromo);
     }).catch(err => console.error("Failed to fetch settings:", err));
   }, []);
 

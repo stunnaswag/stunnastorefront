@@ -9,6 +9,15 @@ export default function OrderConfirmation() {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
 
+  const formatShippingAddress = (shippingAddress) => {
+    if (!shippingAddress) return 'N/A';
+    if (typeof shippingAddress === 'string') return shippingAddress;
+
+    return [shippingAddress.street, shippingAddress.city, shippingAddress.state, shippingAddress.country]
+      .filter(Boolean)
+      .join(', ');
+  };
+
   useEffect(() => {
     registerRequest();
 
@@ -59,6 +68,25 @@ export default function OrderConfirmation() {
       <div className="w-full flex justify-between items-center text-[10px] uppercase tracking-widest mb-4 border-[1px] border-stunna-text/20 p-4">
         <span className="text-stunna-text/50">ORDER ID:</span>
         <strong className="text-stunna-text">{order.id}</strong>
+      </div>
+
+      <div className="w-full grid gap-4 md:grid-cols-2 text-left text-[10px] uppercase tracking-widest mb-6">
+        <div className="border-[1px] border-stunna-text/20 p-4">
+          <p className="text-stunna-text/50 mb-2">CUSTOMER</p>
+          <p className="text-stunna-text">{order.customer_name || 'N/A'}</p>
+          <p className="text-stunna-text/70 mt-1">{order.customer_email || 'N/A'}</p>
+          <p className="text-stunna-text/70 mt-1">{order.customer_phone || 'N/A'}</p>
+        </div>
+        <div className="border-[1px] border-stunna-text/20 p-4">
+          <p className="text-stunna-text/50 mb-2">SHIPPING ADDRESS</p>
+          <p className="text-stunna-text">{formatShippingAddress(order.shipping_address)}</p>
+        </div>
+      </div>
+
+      <div className="w-full border-[1px] border-stunna-text/20 p-4 text-left text-[10px] uppercase tracking-widest mb-6">
+        <p className="text-stunna-text/50 mb-2">SHIPMENT STATUS</p>
+        <p className="text-stunna-text font-medium">{order.fulfillment_status || 'pending'}</p>
+        <p className="text-stunna-text/70 mt-2">{order.tracking_number ? `TRACKING: ${order.tracking_number}` : 'TRACKING NUMBER WILL APPEAR HERE ONCE YOUR ORDER HAS BEEN DISPATCHED.'}</p>
       </div>
 
       {order.payment_status === 'manual_pending' ? (

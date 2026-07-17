@@ -450,7 +450,18 @@ app.get('/api/orders/:id', async (req, res) => {
     const { id } = req.params;
     const { data: order, error } = await supabase
       .from('orders')
-      .select('id, created_at, total_amount, payment_status, fulfillment_status')
+      .select(`
+        id,
+        created_at,
+        total_amount,
+        payment_status,
+        fulfillment_status,
+        tracking_number,
+        customer_phone,
+        shipping_address,
+        customer_email,
+        customer_name
+      `)
       .eq('id', id)
       .single();
 

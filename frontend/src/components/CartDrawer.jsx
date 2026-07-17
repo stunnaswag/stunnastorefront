@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -8,7 +8,23 @@ import { useNavigate } from 'react-router-dom';
 export default function CartDrawer() {
   const { cart, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, clearCart, cartSubtotal, cartItemCount, shippingCost, promoDiscount, cartTotal, saveForLater, savedItems, moveToCart, removeSavedItem } = useCart();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [latestOrderId, setLatestOrderId] = useState(() => {
+    try {
+      return localStorage.getItem('stunna_latest_order') || null;
+    } catch (e) {
+      return null;
+    }
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const storedOrderId = localStorage.getItem('stunna_latest_order');
+      setLatestOrderId(storedOrderId || null);
+    } catch (e) {
+      setLatestOrderId(null);
+    }
+  }, []);
 
   return (
     <AnimatePresence>
@@ -41,9 +57,21 @@ export default function CartDrawer() {
               {cart.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                   <p className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/60 mb-6">YOUR BAG IS EMPTY.</p>
+                  {latestOrderId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCartOpen(false);
+                        navigate(`/order-confirmation/${latestOrderId}`);
+                      }}
+                      className="rounded-full border-[1px] border-stunna-text px-8 py-3 text-[10px] uppercase tracking-widest font-medium text-stunna-text hover:bg-stunna-text hover:text-stunna-bg transition-all duration-300"
+                    >
+                      TRACK ORDER
+                    </button>
+                  )}
                   <button 
                     onClick={() => setIsCartOpen(false)}
-                    className="rounded-full border-[1px] border-stunna-text px-8 py-3 text-[10px] uppercase tracking-widest font-medium text-stunna-text hover:bg-stunna-text hover:text-stunna-bg transition-all duration-300"
+                    className="mt-4 rounded-full border-[1px] border-stunna-text px-8 py-3 text-[10px] uppercase tracking-widest font-medium text-stunna-text hover:bg-stunna-text hover:text-stunna-bg transition-all duration-300"
                   >
                     CONTINUE SHOPPING
                   </button>
@@ -145,6 +173,18 @@ export default function CartDrawer() {
                   <span className="text-[10px] uppercase tracking-widest font-medium text-stunna-text/80 leading-tight">TOTAL</span>
                   <span className="text-sm uppercase tracking-widest font-bold text-stunna-text leading-tight text-right">₦{cartTotal.toLocaleString()}</span>
                 </div>
+                {latestOrderId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      navigate(`/order-confirmation/${latestOrderId}`);
+                    }}
+                    className="w-full rounded-full border-[1px] border-stunna-text text-stunna-text py-3 text-[10px] uppercase tracking-widest font-medium hover:bg-stunna-text hover:text-stunna-bg transition-colors duration-300"
+                  >
+                    TRACK ORDER
+                  </button>
+                )}
                 <button 
                   onClick={() => setIsCheckoutOpen(true)}
                   className="w-full rounded-full bg-stunna-text text-stunna-bg py-4 text-[10px] uppercase tracking-widest font-medium hover:bg-stunna-text/90 transition-colors duration-300"
@@ -162,6 +202,8 @@ export default function CartDrawer() {
               onSuccess={(orderId) => {
                 setIsCheckoutOpen(false);
                 setIsCartOpen(false);
+                localStorage.setItem('stunna_latest_order', orderId);
+                setLatestOrderId(orderId);
                 clearCart();
                 navigate('/order-confirmation/' + orderId);
               }} 

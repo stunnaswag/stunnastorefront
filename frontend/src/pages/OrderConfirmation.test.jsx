@@ -17,6 +17,16 @@ describe('OrderConfirmation page', () => {
           created_at: '2026-07-17T00:00:00Z',
           total_amount: 1200,
           fulfillment_status: 'pending',
+          tracking_number: null,
+          customer_name: 'Jane Buyer',
+          customer_email: 'buyer@example.com',
+          customer_phone: '+2348000000000',
+          shipping_address: {
+            street: '12 Market Road',
+            city: 'Lagos',
+            state: 'Lagos State',
+            country: 'Nigeria',
+          },
         },
       }),
     })));
@@ -27,7 +37,7 @@ describe('OrderConfirmation page', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the order confirmation page without relying on the removed withLoading helper', async () => {
+it('renders the order confirmation page with shipping and tracking context', async () => {
     render(
       <LoadingProvider>
         <MemoryRouter initialEntries={['/order-confirmation/ord-123']}>
@@ -40,6 +50,8 @@ describe('OrderConfirmation page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/order status/i)).toBeInTheDocument();
+      expect(screen.getByText(/12 market road/i)).toBeInTheDocument();
+      expect(screen.getByText(/shipment status/i)).toBeInTheDocument();
     });
   });
 });
