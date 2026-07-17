@@ -20,14 +20,23 @@ export default function ProductModal({ product: initialProduct, adminKey, onClos
   });
 
   useEffect(() => {
+    setProduct(initialProduct);
+  }, [initialProduct]);
+
+  useEffect(() => {
     if (product) {
-      const totalStock = (product.variants || []).reduce((sum, variant) => sum + (Number(variant?.stock) || 0), 0);
+      const defaultVariant = (product.variants || []).find((variant) =>
+        String(variant?.size || '').trim().toUpperCase() === 'ONE SIZE'
+      );
+
+      const defaultStock = Number(defaultVariant?.stock ?? 0);
+
       setFormData({
         name: product.name || '',
         description: product.description || '',
         base_price: product.base_price || '',
         collection: product.collection || '',
-        stock: product.variants?.length ? String(totalStock) : '',
+        stock: defaultVariant ? String(defaultStock) : '',
         is_active: product.is_active ?? true
       });
       setImageUrls(product.image_urls || []);

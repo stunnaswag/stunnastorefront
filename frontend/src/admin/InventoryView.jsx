@@ -6,6 +6,7 @@ export default function InventoryView({ adminKey, onAuthError }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -48,6 +49,46 @@ export default function InventoryView({ adminKey, onAuthError }) {
       setProducts(products.map(p => p.id === id ? { ...p, is_active: !currentStatus } : p));
     } catch (err) {
       window.alert(`ERROR: ${err.message}`);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this product? This will also remove its variants.')) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` }
+      });
+
+      const text = await res.text();
+      let json = null;
+
+      if (text) {
+        try {
+          json = JSON.parse(text);
+        } catch {
+          json = { message: text };
+        }
+      }
+
+      if (!res.ok) {
+        throw new Error(json?.details || json?.error || json?.message || 'Failed to delete product');
+      }
+
+      setProducts(prev => prev.filter(product => product.id !== id));
+      if (selectedProduct?.id === id) {
+        setSelectedProduct(null);
+        setModalOpen(false);
+      }
+      fetchInventory();
+    } catch (err) {
+      window.alert(`ERROR: ${err.message}`);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -112,6 +153,14 @@ export default function InventoryView({ adminKey, onAuthError }) {
                   <button type="button" onClick={() => { setSelectedProduct(p); setModalOpen(true); }} className="min-h-11 flex-1 rounded-full border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-orange-400">
                     EDIT STOCK
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteProduct(p.id)}
+                    disabled={deletingId === p.id}
+                    className="min-h-11 flex-1 rounded-full border border-red-400/30 bg-red-400/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-400 disabled:opacity-50"
+                  >
+                    {deletingId === p.id ? 'DELETING...' : 'DELETE'}
+                  </button>
                 </div>
               </article>
             );
@@ -169,6 +218,14 @@ export default function InventoryView({ adminKey, onAuthError }) {
                         className="text-[#EAEAEA]/50 hover:text-[#EAEAEA] transition-colors underline underline-offset-4"
                       >
                         EDIT
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p.id)}
+                        disabled={deletingId === p.id}
+                        className="text-red-400/70 hover:text-red-400 transition-colors underline underline-offset-4 disabled:opacity-50"
+                      >
+                        {deletingId === p.id ? 'DELETING...' : 'DELETE'}
                       </button>
                     </td>
                   </tr>

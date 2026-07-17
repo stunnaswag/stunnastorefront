@@ -8,6 +8,17 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
   const [deletingId, setDeletingId] = useState(null);
   const [newStockValues, setNewStockValues] = useState({});
 
+  const parseResponsePayload = async (res) => {
+    const text = await res.text();
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: text };
+    }
+  };
+
   const handleAddVariant = async (e) => {
     e.preventDefault();
     try {
@@ -16,8 +27,8 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` },
         body: JSON.stringify({ size, color, stock: parseInt(stock, 10) })
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.details || json.error || 'Failed to add variant');
+      const json = await parseResponsePayload(res);
+      if (!res.ok) throw new Error(json?.details || json?.error || json?.message || 'Failed to add variant');
       
       setSize('');
       setColor('');
@@ -42,8 +53,8 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` },
         body: JSON.stringify({ stock: newStock })
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.details || json.error || 'Failed to update stock');
+      const json = await parseResponsePayload(res);
+      if (!res.ok) throw new Error(json?.details || json?.error || json?.message || 'Failed to update stock');
       
       onVariantUpdate();
     } catch (err) {
@@ -62,8 +73,8 @@ export default function VariantManager({ productId, variants, adminKey, onVarian
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` }
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.details || json.error || 'Failed to delete variant');
+      const json = await parseResponsePayload(res);
+      if (!res.ok) throw new Error(json?.details || json?.error || json?.message || 'Failed to delete variant');
       
       onVariantUpdate();
     } catch (err) {
