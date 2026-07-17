@@ -133,6 +133,29 @@ async function sendBrevoEmail(toEmail, subject, htmlContent) {
   return data;
 }
 
+function generateTrackingNumber(prefix = 'STU') {
+  const suffix = `${Date.now().toString(36).slice(-4).toUpperCase()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  return `${prefix}${suffix}`;
+}
+
+async function createUniqueTrackingNumber(prefix = 'STU') {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = generateTrackingNumber(prefix);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('tracking_number', candidate)
+      .limit(1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      return candidate;
+    }
+  }
+
+  throw new Error('Failed to generate a unique tracking number.');
+}
+
 // ============================================================
 // 3. EXPRESS SETUP
 // ============================================================
@@ -1077,17 +1100,26 @@ app.patch('/api/admin/orders/:id/fulfillment-status', requireAdmin, async (req, 
     const { id } = req.params;
     const { status, tracking_number } = req.body;
 
-    const validStatuses = ['pending', 'shipped', 'delivered', 'cancelled'];
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, error: 'Invalid status provided.' });
     }
 
-    // Automatically timestamp the transition if shifting into an active physical state
-    const fulfilled_at = (status === 'shipped' || status === 'delivered') ? new Date().toISOString() : null;
-
     const updatePayload = { fulfillment_status: status };
-    if (tracking_number !== undefined) updatePayload.tracking_number = tracking_number;
-    if (fulfilled_at !== undefined) updatePayload.fulfilled_at = fulfilled_at;
+
+    if (status === 'cancelled') {
+      updatePayload.tracking_number = null;
+      updatePayload.fulfilled_at = null;
+    } else {
+      const normalizedTrackingNumber = typeof tracking_number === 'string' ? tracking_number.trim() : '';
+      if (['processing', 'shipped', 'delivered'].includes(status) && !normalizedTrackingNumber) {
+        updatePayload.tracking_number = await createUniqueTrackingNumber('STU');
+      } else if (normalizedTrackingNumber) {
+        updatePayload.tracking_number = normalizedTrackingNumber;
+      }
+
+      updatePayload.fulfilled_at = (status === 'shipped' || status === 'delivered') ? new Date().toISOString() : null;
+    }
 
     const { data: order, error } = await supabase
       .from('orders')
@@ -1261,9 +1293,28 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
     // 3. Update orders payment_status and fulfillment_status
     const orderStatus = status === 'Verified' ? 'success' : 'failed';
     const fulfillmentStatus = status === 'Verified' ? 'processing' : 'cancelled';
+
+    const orderUpdatePayload = {
+      payment_status: orderStatus,
+      fulfillment_status: fulfillmentStatus,
+    };
+
+    if (status === 'Verified') {
+      const { data: currentOrder, error: currentOrderError } = await supabase
+        .from('orders')
+        .select('tracking_number')
+        .eq('id', payment.order_id)
+        .single();
+
+      if (currentOrderError) throw currentOrderError;
+      if (!currentOrder?.tracking_number) {
+        orderUpdatePayload.tracking_number = await createUniqueTrackingNumber('STU');
+      }
+    }
+
     const { error: orderError } = await supabase
       .from('orders')
-      .update({ payment_status: orderStatus, fulfillment_status: fulfillmentStatus })
+      .update(orderUpdatePayload)
       .eq('id', payment.order_id);
 
     if (orderError) throw orderError;
