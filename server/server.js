@@ -14,9 +14,9 @@ import dotenv from 'dotenv';
 // 1. Path Verification
 const envPath = path.resolve(process.cwd(), '.env');
 if (!fs.existsSync(envPath)) {
-  console.warn(`⚠️  Warning: .env file not found at ${envPath}`);
+  console.warn(` Warning: .env file not found at ${envPath}`);
 } else {
-  console.log(`✅ .env file found at ${envPath}`);
+  console.log(` .env file found at ${envPath}`);
 }
 
 dotenv.config();
@@ -144,7 +144,9 @@ const frontendDistPath = path.resolve(serverDir, '../frontend/dist');
 // --- Middleware ---
 
 // Parse incoming JSON bodies (for POST/PUT routes later)
-app.use(express.json());
+// The checkout proof upload sends a full base64 image payload, so allow a larger request body.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve the built frontend static assets in production
 app.use(express.static(frontendDistPath));
