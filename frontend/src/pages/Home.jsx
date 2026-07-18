@@ -73,7 +73,7 @@ export default function Home() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-stunna-bg">
-      <SEO title="STUNNA SWAG SEASON | EXPRE$$ YOUR$ELF" />
+      <SEO title="STUNNA SWAG SEASON | ESPRE$$ YOUR $ELF" />
       {/* 1. HERO SECTION */}
       {error ? (
         <div className="w-full h-[50vh] flex items-center justify-center text-stunna-text uppercase tracking-widest text-[10px] border border-stunna-text/10">
