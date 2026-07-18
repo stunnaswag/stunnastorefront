@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import useIsMobile from './useIsMobile';
 
 export default function PaymentsView({ onAuthError }) {
+  const [activeTab, setActiveTab] = useState('Pending');
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -84,15 +85,35 @@ export default function PaymentsView({ onAuthError }) {
     return <div className="text-[10px] tracking-widest uppercase text-red-500 mt-8">{error}</div>;
   }
 
+  const displayedPayments = payments.filter(p => 
+    activeTab === 'Pending' ? p.status === 'Pending' : p.status !== 'Pending'
+  );
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-6xl relative font-sans text-[#EAEAEA]">
       <div className="flex justify-between items-end border-b-[1px] border-[#EAEAEA]/10 pb-4">
-        <h2 className="text-[10px] tracking-widest uppercase font-medium text-[#EAEAEA]/40">
-          MANUAL PAYMENTS REGISTRY ({payments.length})
-        </h2>
+        <div className="flex flex-col gap-4">
+          <h2 className="text-[10px] tracking-widest uppercase font-medium text-[#EAEAEA]/40">
+            MANUAL PAYMENTS REGISTRY
+          </h2>
+          <div className="flex gap-6">
+            <button
+              onClick={() => setActiveTab('Pending')}
+              className={`text-[10px] tracking-widest uppercase font-medium pb-2 border-b-2 transition-colors ${activeTab === 'Pending' ? 'border-[#EAEAEA] text-[#EAEAEA]' : 'border-transparent text-[#EAEAEA]/40 hover:text-[#EAEAEA]/80'}`}
+            >
+              PENDING ({payments.filter(p => p.status === 'Pending').length})
+            </button>
+            <button
+              onClick={() => setActiveTab('History')}
+              className={`text-[10px] tracking-widest uppercase font-medium pb-2 border-b-2 transition-colors ${activeTab === 'History' ? 'border-[#EAEAEA] text-[#EAEAEA]' : 'border-transparent text-[#EAEAEA]/40 hover:text-[#EAEAEA]/80'}`}
+            >
+              HISTORY ({payments.filter(p => p.status !== 'Pending').length})
+            </button>
+          </div>
+        </div>
         <button 
           onClick={fetchPayments} 
-          className="border-[1px] border-[#EAEAEA] px-6 py-2 text-[10px] tracking-widest uppercase hover:bg-[#EAEAEA] hover:text-[#2C1414] transition-colors font-medium"
+          className="border-[1px] border-[#EAEAEA] px-6 py-2 text-[10px] tracking-widest uppercase hover:bg-[#EAEAEA] hover:text-[#2C1414] transition-colors font-medium mb-2"
         >
           REFRESH
         </button>
@@ -100,11 +121,11 @@ export default function PaymentsView({ onAuthError }) {
 
       {isMobile ? (
         <div className="flex flex-col gap-3 md:hidden">
-          {payments.length === 0 ? (
-            <div className="rounded-2xl border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 p-6 text-center text-[#EAEAEA]/30">NO PAYMENTS FOUND.</div>
+          {displayedPayments.length === 0 ? (
+            <div className="rounded-2xl border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 p-6 text-center text-[#EAEAEA]/30">NO {activeTab.toUpperCase()} PAYMENTS FOUND.</div>
           ) : (
-            payments.map((payment) => (
-              <article key={payment.id} className="rounded-2xl border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 p-4">
+            displayedPayments.map((payment) => (
+              <article key={payment.id} className="border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.3em] text-[#EAEAEA]/40">PAYMENT</p>
@@ -135,10 +156,10 @@ export default function PaymentsView({ onAuthError }) {
 
                 {payment.status === 'Pending' ? (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => handleVerify(payment.id, 'Verified')} className="min-h-11 flex-1 rounded-full border border-green-500/40 bg-green-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-green-500">
+                    <button type="button" onClick={() => handleVerify(payment.id, 'Verified')} className="min-h-11 flex-1 rounded border border-green-500/40 bg-green-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-green-500">
                       APPROVE
                     </button>
-                    <button type="button" onClick={() => handleVerify(payment.id, 'Rejected')} className="min-h-11 flex-1 rounded-full border border-red-500/40 bg-red-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-500">
+                    <button type="button" onClick={() => handleVerify(payment.id, 'Rejected')} className="min-h-11 flex-1 rounded border border-red-500/40 bg-red-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-500">
                       REJECT
                     </button>
                   </div>
@@ -163,12 +184,12 @@ export default function PaymentsView({ onAuthError }) {
               </tr>
             </thead>
             <tbody>
-              {payments.length === 0 ? (
+              {displayedPayments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-8 text-center text-[#EAEAEA]/30">NO PAYMENTS FOUND.</td>
+                  <td colSpan="6" className="py-8 text-center text-[#EAEAEA]/30">NO {activeTab.toUpperCase()} PAYMENTS FOUND.</td>
                 </tr>
               ) : (
-                payments.map((payment) => (
+                displayedPayments.map((payment) => (
                   <tr key={payment.id} className="border-b-[1px] border-[#EAEAEA]/5 hover:bg-[#EAEAEA]/5 transition-colors">
                     <td className="py-5 pr-4 text-[#EAEAEA]/70">
                       {new Date(payment.created_at).toLocaleDateString()}

@@ -2,10 +2,10 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 export default function SEO({ title, description, image, url, productSchema }) {
-  const defaultTitle = "STUNNA | Archival Streetwear";
+  const defaultTitle = "STUNNA SWAG SEASON | EXPRE$$ YOUR$ELF";
   const defaultDescription = "Premium archival streetwear out of Lagos, Nigeria.";
-  const defaultImage = "https://stunna.com/default-share.jpg"; 
-  const defaultUrl = "https://stunna.com";
+  const defaultImage = "https://www.stunnaswagseason.store/logo/logo.png"; 
+  const defaultUrl = "https://www.stunnaswagseason.store";
 
   const seo = {
     title: title || defaultTitle,
