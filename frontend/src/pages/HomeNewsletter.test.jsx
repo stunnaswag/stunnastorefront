@@ -19,7 +19,7 @@ describe('Home newsletter signup', () => {
       if (url === '/api/settings/hero_image') {
         return {
           ok: true,
-          json: async () => ({ value: 'https://example.com/hero.jpg' }),
+          json: async () => ({ value: 'https://www.stunnaswagseason.store/logo/logo.png' }),
         };
       }
 
