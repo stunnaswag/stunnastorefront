@@ -3,152 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Text, Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
-const SEGMENTS = 350;
 const BASE_Y = 0;
-
-function PythonHead() {
-  const skinMaterial = (
-    <meshPhysicalMaterial 
-      color="#A31616" 
-      metalness={0.9} 
-      roughness={0.1} 
-      clearcoat={1.0} 
-      emissive="#2C1414" 
-      emissiveIntensity={0.2}
-    />
-  );
-
-  return (
-    <group scale={[2.5, 2.5, 2.5]}>
-      <mesh position={[0, 0, 1.2]} scale={[1.5, 0.6, 2.2]}>
-        <sphereGeometry args={[0.6, 32, 32]} />
-        {skinMaterial}
-      </mesh>
-
-      <mesh position={[0.45, 0.35, 1.5]} scale={[0.6, 0.6, 1.8]} rotation={[0.1, 0.2, 0.1]}>
-        <sphereGeometry args={[0.3, 16, 16]} />
-        {skinMaterial}
-      </mesh>
-      <mesh position={[-0.45, 0.35, 1.5]} scale={[0.6, 0.6, 1.8]} rotation={[0.1, -0.2, -0.1]}>
-        <sphereGeometry args={[0.3, 16, 16]} />
-        {skinMaterial}
-      </mesh>
-
-      <mesh position={[0.6, 0.15, 1.8]} rotation={[0, Math.PI / 6, 0]}>
-        <sphereGeometry args={[0.12, 16, 16]} />
-        <meshStandardMaterial color="#000000" metalness={1.0} roughness={0} emissive="#330000" emissiveIntensity={0.8} />
-      </mesh>
-      <mesh position={[-0.6, 0.15, 1.8]} rotation={[0, -Math.PI / 6, 0]}>
-        <sphereGeometry args={[0.12, 16, 16]} />
-        <meshStandardMaterial color="#000000" metalness={1.0} roughness={0} emissive="#330000" emissiveIntensity={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-const BiologicalSnake = React.memo(React.forwardRef((props, ref) => {
-  const meshRef = useRef();
-  const headRef = useRef();
-
-  const instancedGeoRef = useRef();
-  const instancedMatRef = useRef();
-  const { size } = useThree();
-
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const viewportWidth = size.width || 1024;
-  const viewportHeight = size.height || 768;
-
-  const curve = useMemo(() => {
-    const orbitRadius = Math.max(3.0, Math.min(5.2, viewportWidth / 320));
-    const verticalLift = Math.max(0.35, Math.min(0.75, viewportHeight / 1500));
-
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-orbitRadius, 0.0, 0.2),
-      new THREE.Vector3(-orbitRadius * 0.55, verticalLift, 0.4),
-      new THREE.Vector3(0.0, 0.0, 0.5),
-      new THREE.Vector3(orbitRadius * 0.55, -verticalLift, 0.4),
-      new THREE.Vector3(orbitRadius, 0.0, -0.2),
-      new THREE.Vector3(orbitRadius * 0.55, verticalLift, -0.4),
-      new THREE.Vector3(0.0, 0.0, -0.5),
-      new THREE.Vector3(-orbitRadius * 0.55, -verticalLift, -0.4),
-    ], true);
-  }, [viewportWidth, viewportHeight]);
-
-  useEffect(() => {
-    return () => {
-      if (instancedGeoRef.current) instancedGeoRef.current.dispose();
-      if (instancedMatRef.current) instancedMatRef.current.dispose();
-      if (meshRef.current) meshRef.current.dispose();
-    };
-  }, []);
-
-  useImperativeHandle(ref, () => ({
-    update: (time) => {
-      for (let i = 0; i < SEGMENTS; i++) {
-        const segmentT = i / (SEGMENTS - 1);
-        const pathT = (segmentT * 0.62 + time * 0.18) % 1.0;
-        const pos = curve.getPointAt(pathT);
-
-        const slitherWave = Math.sin(pathT * Math.PI * 8 - time * 4.2) * 0.16;
-        pos.y += slitherWave;
-
-        const profileArch = Math.sin(segmentT * Math.PI);
-        const scale = 0.06 + segmentT * 0.09 + profileArch * 0.04;
-
-        dummy.position.copy(pos);
-        dummy.scale.set(scale, scale, scale);
-        dummy.updateMatrix();
-
-        if (meshRef.current) {
-          meshRef.current.setMatrixAt(i, dummy.matrix);
-        }
-
-        if (i === SEGMENTS - 1 && headRef.current) {
-          headRef.current.position.copy(pos);
-
-          const pulse = 1.0 + Math.sin(time * 4.2) * 0.05;
-          const baseHeadScale = scale * 1.24 * pulse;
-          headRef.current.scale.set(baseHeadScale, baseHeadScale, baseHeadScale);
-
-          const tangent = curve.getTangentAt(pathT);
-          const lookTarget = pos.clone().add(tangent);
-
-          const futurePathT = (pathT + 0.01) % 1.0;
-          const futureSlitherWave = Math.sin(futurePathT * Math.PI * 8 - time * 4.2) * 0.16;
-          const futureBaseY = curve.getPointAt(futurePathT).y;
-
-          lookTarget.y = futureBaseY + futureSlitherWave;
-          headRef.current.lookAt(lookTarget);
-        }
-      }
-      
-      if (meshRef.current) {
-        meshRef.current.instanceMatrix.needsUpdate = true;
-      }
-    }
-  }));
-
-  return (
-    <group {...props}>
-      <instancedMesh ref={meshRef} args={[null, null, SEGMENTS]}>
-        <sphereGeometry ref={instancedGeoRef} args={[1, 16, 16]} />
-        <meshPhysicalMaterial 
-          ref={instancedMatRef}
-          color="#A31616" 
-          metalness={0.9}
-          roughness={0.1}
-          clearcoat={1.0}
-          emissive="#2C1414"
-          emissiveIntensity={0.2}
-        />
-      </instancedMesh>
-      
-      <group ref={headRef}>
-        <PythonHead />
-      </group>
-    </group>
-  );
-}));
 
 const BrandText = React.memo(() => {
   const { size } = useThree();
@@ -200,7 +55,6 @@ const BrandText = React.memo(() => {
 
 function SharedScene() {
   const sharedGroupRef = useRef();
-  const snakeLogicRef = useRef();
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
@@ -209,16 +63,11 @@ function SharedScene() {
     if (sharedGroupRef.current) {
       sharedGroupRef.current.position.y = BASE_Y + wave;
     }
-    
-    if (snakeLogicRef.current && snakeLogicRef.current.update) {
-      snakeLogicRef.current.update(time);
-    }
   });
 
   return (
     <group ref={sharedGroupRef}>
       <BrandText />
-      <BiologicalSnake ref={snakeLogicRef} />
     </group>
   );
 }
