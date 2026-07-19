@@ -137,10 +137,6 @@ export default function Loader() {
           <SharedScene />
         </Canvas>
       </div>
-      
-      <span className="text-[10px] uppercase tracking-widest font-medium text-[#EAEAEA]/30 absolute bottom-[5vh] z-20 animate-pulse">
-        LOADING EXPERIENCE
-      </span>
     </div>
   );
 }
