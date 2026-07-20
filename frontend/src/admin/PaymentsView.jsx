@@ -69,6 +69,28 @@ export default function PaymentsView({ onAuthError }) {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("ARE YOU SURE YOU WANT TO DELETE THIS PAYMENT RECORD?")) return;
+
+    try {
+      const res = await fetch(`/api/admin/payments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}`
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.message || 'Failed to delete payment.');
+      
+      window.alert("PAYMENT SUCCESSFULLY DELETED");
+      fetchPayments();
+    } catch (err) {
+      window.alert(`ERROR: ${err.message.toUpperCase()}`);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Verified': return 'text-green-500/80';
@@ -154,18 +176,23 @@ export default function PaymentsView({ onAuthError }) {
                   </div>
                 </dl>
 
-                {payment.status === 'Pending' ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => handleVerify(payment.id, 'Verified')} className="min-h-11 flex-1 rounded border border-green-500/40 bg-green-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-green-500">
-                      APPROVE
-                    </button>
-                    <button type="button" onClick={() => handleVerify(payment.id, 'Rejected')} className="min-h-11 flex-1 rounded border border-red-500/40 bg-red-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-500">
-                      REJECT
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-4 text-[11px] uppercase tracking-[0.2em] text-[#EAEAEA]/30">PROCESSED</div>
-                )}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {payment.status === 'Pending' ? (
+                    <>
+                      <button type="button" onClick={() => handleVerify(payment.id, 'Verified')} className="min-h-11 flex-1 rounded border border-green-500/40 bg-green-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-green-500">
+                        APPROVE
+                      </button>
+                      <button type="button" onClick={() => handleVerify(payment.id, 'Rejected')} className="min-h-11 flex-1 rounded border border-red-500/40 bg-red-500/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-500">
+                        REJECT
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex-1 text-[11px] uppercase tracking-[0.2em] text-[#EAEAEA]/30">PROCESSED</div>
+                  )}
+                  <button type="button" onClick={() => handleDelete(payment.id)} className="min-h-11 rounded border border-red-500/40 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-red-500 hover:bg-red-500/10 transition-colors">
+                    DELETE
+                  </button>
+                </div>
               </article>
             ))
           )}
@@ -209,7 +236,7 @@ export default function PaymentsView({ onAuthError }) {
                         <div className="text-[9px] uppercase tracking-wider text-red-500/50 mt-1">NOTE: {payment.verification_notes}</div>
                       )}
                     </td>
-                    <td className="py-5 text-right flex justify-end gap-2">
+                    <td className="py-5 text-right flex justify-end items-center gap-2">
                       {payment.status === 'Pending' ? (
                         <>
                           <button 
@@ -228,8 +255,15 @@ export default function PaymentsView({ onAuthError }) {
                           </button>
                         </>
                       ) : (
-                        <span className="text-[#EAEAEA]/30">PROCESSED</span>
+                        <span className="text-[#EAEAEA]/30 mr-2">PROCESSED</span>
                       )}
+                      <button 
+                        type="button"
+                        onClick={() => handleDelete(payment.id)}
+                        className="px-4 py-2 rounded-full border-[1px] border-red-500/50 text-red-500 hover:bg-red-500 hover:text-[#2C1414] transition-colors"
+                      >
+                        DELETE
+                      </button>
                     </td>
                   </tr>
                 ))

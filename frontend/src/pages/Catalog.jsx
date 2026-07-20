@@ -110,7 +110,7 @@ export default function Catalog() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full min-h-screen bg-stunna-bg">
-      <SEO title="CATALOG | STUNNA" description="Shop the latest archival streetwear from Stunna." />
+      <SEO title="CATALOG | STUNNA" description="Shop the latest EXPRE$$ YOUR$ELF from Stunna." />
       {/* FULL-BLEED HERO SLIDESHOW */}
       <div className="w-full h-[70vh] md:h-[75vh] relative overflow-hidden bg-stunna-text/5">
         <AnimatePresence mode="wait">

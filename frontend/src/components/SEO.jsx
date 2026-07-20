@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 
 export default function SEO({ title, description, image, url, productSchema }) {
   const defaultTitle = "STUNNA SWAG SEASON | ESPRE$$ YOUR $ELF";
-  const defaultDescription = "Premium archival streetwear out of Lagos, Nigeria.";
+  const defaultDescription = "Premium EXPRE$$ YOUR$ELF out of Lagos, Nigeria.";
   const defaultImage = "https://www.stunnaswagseason.store/logo/logo.png"; 
   const defaultUrl = "https://www.stunnaswagseason.store";
 

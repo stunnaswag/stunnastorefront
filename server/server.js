@@ -1395,6 +1395,24 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
   }
 });
 
+// ----- DELETE /api/admin/payments/:id -----------------
+app.delete('/api/admin/payments/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('manual_payments')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Payment deleted successfully.' });
+  } catch (error) {
+    console.error('Admin DELETE Payment Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete payment.' });
+  }
+});
+
 // ============================================================
 // 7. FRONTEND SPA FALLBACK
 // ============================================================
