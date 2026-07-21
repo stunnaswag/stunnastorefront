@@ -140,6 +140,7 @@ export default function Catalog() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
+              data-analytics-click="catalog_filter"
               className={`text-[10px] uppercase tracking-widest font-medium transition-colors duration-300 
                 ${activeCategory === cat ? 'opacity-100 text-stunna-accent border-b-[1px] border-stunna-accent pb-1' : 'opacity-60 text-stunna-text hover:text-stunna-accent hover:opacity-100'}
               `}
@@ -155,6 +156,7 @@ export default function Catalog() {
             <button
               key={sortType}
               onClick={() => setSortBy(sortType)}
+              data-analytics-click="catalog_sort"
               className={`text-[10px] uppercase tracking-widest font-medium transition-colors duration-300 
                 ${sortBy === sortType ? 'opacity-100 text-stunna-text border-b-[1px] border-stunna-text pb-1' : 'opacity-40 text-stunna-text hover:text-stunna-text hover:opacity-100'}
               `}

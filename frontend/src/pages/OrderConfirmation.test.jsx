@@ -54,4 +54,36 @@ it('renders the order confirmation page with shipping and tracking context', asy
       expect(screen.getByText(/shipment status/i)).toBeInTheDocument();
     });
   });
+
+  it('shows a cancellation message when the order was cancelled by the admin', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          id: 'ord-cancelled',
+          payment_status: 'failed',
+          fulfillment_status: 'cancelled',
+          tracking_number: null,
+          customer_name: 'Jane Buyer',
+          customer_email: 'buyer@example.com',
+          shipping_address: null,
+        },
+      }),
+    })));
+
+    render(
+      <LoadingProvider>
+        <MemoryRouter initialEntries={['/order-confirmation/ord-cancelled']}>
+          <Routes>
+            <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
+          </Routes>
+        </MemoryRouter>
+      </LoadingProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/this order has been cancelled/i)).toBeInTheDocument();
+    });
+  });
 });

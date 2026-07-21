@@ -29,7 +29,9 @@ describe('DashboardHome analytics view', () => {
               paymentMix: [
                 { label: 'Success', value: 2 },
                 { label: 'Pending', value: 1 }
-              ]
+              ],
+              websiteByDay: [{ label: 'Jun 02', views: 4, clicks: 2 }],
+              websiteTotals: { pageViews: 4, clicks: 2 }
             }
           })
         });
@@ -52,5 +54,8 @@ describe('DashboardHome analytics view', () => {
     });
 
     expect(screen.getByText(/payment mix/i)).toBeInTheDocument();
+    const websiteViewsHeading = screen.getByText(/website views/i);
+    expect(websiteViewsHeading).toBeInTheDocument();
+    expect(websiteViewsHeading.parentElement).toHaveTextContent('4');
   });
 });

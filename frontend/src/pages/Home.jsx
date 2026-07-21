@@ -87,6 +87,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/20"></div>
           <button 
             onClick={() => navigate('/catalog')} 
+            data-analytics-click="home_shop"
             className="relative z-10 rounded-full border border-white/50 bg-white/10 backdrop-blur-sm px-8 py-3 text-white text-xs font-semibold tracking-widest uppercase transition-all duration-300 hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-white/50"
           >
             SHOP

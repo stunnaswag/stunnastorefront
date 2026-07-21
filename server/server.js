@@ -265,6 +265,37 @@ const upsertDefaultVariantStock = async (productId, stock) => {
 // 5. PUBLIC ROUTES
 // ============================================================
 
+// ----- POST /api/analytics/events ---------------------------
+app.post('/api/analytics/events', async (req, res) => {
+  try {
+    const { event_type, path: eventPath, target, product_id, product_slug, session_id, metadata } = req.body || {};
+    const allowedEventTypes = ['page_view', 'click'];
+
+    if (!allowedEventTypes.includes(event_type) || typeof eventPath !== 'string' || !eventPath.startsWith('/')) {
+      return res.status(400).json({ success: false, message: 'Invalid analytics event.' });
+    }
+
+    const safeMetadata = metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {};
+    const { error } = await supabase
+      .from('analytics_events')
+      .insert([{
+        event_type,
+        path: eventPath.slice(0, 500),
+        target: typeof target === 'string' ? target.slice(0, 100) : null,
+        product_id: typeof product_id === 'string' ? product_id : null,
+        product_slug: typeof product_slug === 'string' ? product_slug.slice(0, 200) : null,
+        session_id: typeof session_id === 'string' ? session_id.slice(0, 100) : null,
+        metadata: safeMetadata,
+      }]);
+
+    if (error) throw error;
+    return res.status(204).end();
+  } catch (error) {
+    console.error('Analytics event error:', error);
+    return res.status(204).end();
+  }
+});
+
 // ----- Health check -----------------------------------------
 // Quick sanity endpoint for uptime monitors / deployment checks.
 
@@ -494,7 +525,7 @@ app.get('/api/orders/:id', async (req, res) => {
       if (error.code === 'PGRST116') {
         return res.status(404).json({ success: false, message: 'Order not found.' });
       }
-      throw error;
+      throw error;EXPRE$$
     }
 
     return res.status(200).json({ success: true, data: order });
@@ -1222,13 +1253,22 @@ app.put('/api/admin/settings/:key', requireAdmin, async (req, res) => {
 // ----- GET /api/admin/analytics ----------------------------
 app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
   try {
+    const analyticsSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('created_at, total_amount, payment_status')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', analyticsSince)
       .order('created_at', { ascending: true });
 
     if (ordersError) throw ordersError;
+
+    const { data: events, error: eventsError } = await supabase
+      .from('analytics_events')
+      .select('event_type, created_at, path')
+      .gte('created_at', analyticsSince)
+      .order('created_at', { ascending: true });
+
+    if (eventsError) throw eventsError;
 
     const dailyMap = new Map();
     orders.forEach((order) => {
@@ -1248,12 +1288,26 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
       { label: 'Refunded', value: orders.filter((order) => order.payment_status === 'refunded').length }
     ].filter((item) => item.value > 0);
 
+    const websiteDailyMap = new Map();
+    events.forEach((event) => {
+      const day = new Date(event.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const existing = websiteDailyMap.get(day) || { label: day, views: 0, clicks: 0 };
+      if (event.event_type === 'page_view') existing.views += 1;
+      if (event.event_type === 'click') existing.clicks += 1;
+      websiteDailyMap.set(day, existing);
+    });
+
+    const pageViews = events.filter((event) => event.event_type === 'page_view').length;
+    const clicks = events.filter((event) => event.event_type === 'click').length;
+
     res.status(200).json({
       success: true,
       data: {
         range: '30d',
         ordersByDay,
-        paymentMix
+        paymentMix,
+        websiteByDay: Array.from(websiteDailyMap.values()).slice(-7),
+        websiteTotals: { pageViews, clicks }
       }
     });
   } catch (error) {

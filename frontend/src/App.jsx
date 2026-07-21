@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
+import AnalyticsTracker from './components/AnalyticsTracker';
 
 // Route-level lazy loading and WebGL Code-splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -48,6 +49,7 @@ function AppContent() {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-stunna-accent selection:text-stunna-text ${isAdminRoute ? '' : 'bg-[#2C1414]'}`}>
+      <AnalyticsTracker />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: (loadingStatus !== 'IDLE' && !isAdminRoute) ? 0 : 1 }}

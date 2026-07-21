@@ -200,6 +200,30 @@ export default function DashboardHome({ adminKey, onAuthError }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">WEBSITE VIEWS</h3>
+          <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.pageViews || 0}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
+        </div>
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">WEBSITE CLICKS</h3>
+          <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.clicks || 0}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
+        </div>
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6 xl:col-span-1">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">VISITS BY DAY</h3>
+            <span className="text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">7D</span>
+          </div>
+          {loadingAnalytics ? (
+            <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
+          ) : (
+            <SimpleBarChart data={(analytics?.websiteByDay || []).map((item) => ({ label: item.label, value: item.views || 0 }))} color="#F08A5D" />
+          )}
+        </div>
+      </div>
+
       {drilldownOpen && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-6 backdrop-blur-sm">
           <div className="bg-[#2C1414] border-[1px] border-[#EAEAEA]/20 w-full max-w-2xl max-h-[80vh] flex flex-col relative">

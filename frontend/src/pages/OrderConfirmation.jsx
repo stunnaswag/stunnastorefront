@@ -89,7 +89,13 @@ export default function OrderConfirmation() {
         <p className="text-stunna-text/70 mt-2">{order.tracking_number ? `TRACKING: ${order.tracking_number}` : 'TRACKING NUMBER WILL APPEAR HERE ONCE YOUR ORDER HAS BEEN DISPATCHED.'}</p>
       </div>
 
-      {order.payment_status === 'manual_pending' ? (
+      {order.fulfillment_status === 'cancelled' ? (
+        <div className="bg-red-500/10 border-[1px] border-red-500/30 p-8 w-full mt-4">
+          <p className="text-sm md:text-base font-bold text-red-500 uppercase tracking-widest leading-relaxed">
+            THIS ORDER HAS BEEN CANCELLED. PLEASE CONTACT SUPPORT IF YOU NEED ASSISTANCE.
+          </p>
+        </div>
+      ) : order.payment_status === 'manual_pending' ? (
         <div className="bg-yellow-500/10 border-[1px] border-yellow-500/30 p-8 w-full mt-4">
           <p className="text-sm md:text-base font-bold text-yellow-500 uppercase tracking-widest leading-relaxed">
             ORDER RECEIVED. YOUR PAYMENT IS PENDING MANUAL VERIFICATION. CHECK BACK LATER FOR UPDATES.

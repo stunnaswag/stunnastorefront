@@ -13,7 +13,13 @@ const ProductCard = forwardRef(({ product }, ref) => {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col group cursor-pointer"
     >
-      <Link to={`/product/${product.slug}`} className="flex flex-col h-full">
+      <Link
+        to={`/product/${product.slug}`}
+        data-analytics-click="product_card"
+        data-product-id={product.id}
+        data-product-slug={product.slug}
+        className="flex flex-col h-full"
+      >
         <div className="w-full aspect-[3/4] bg-stunna-text/5 mb-4 overflow-hidden relative border-[1px] border-stunna-text/10">
           {product.thumbnail_url || (product.image_urls && product.image_urls.length > 0) ? (
             <img 
