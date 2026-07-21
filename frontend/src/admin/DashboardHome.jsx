@@ -1,9 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import ProductModal from './ProductModal';
 
+function SimpleLineChart({ data, color = '#EAEAEA' }) {
+  if (!data || data.length === 0) {
+    return <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40">NO DATA</div>;
+  }
+
+  const width = 320;
+  const height = 160;
+  const padding = 24;
+  const maxValue = Math.max(...data.map((point) => point.value || 0), 1);
+  const minValue = 0;
+
+  const points = data.map((point, index) => {
+    const x = padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2);
+    const y = height - padding - ((point.value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
+    return `${x},${y}`;
+  });
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40 min-w-[280px]">
+        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(234,234,234,0.15)" strokeWidth="1" />
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(234,234,234,0.15)" strokeWidth="1" />
+        <polyline fill="none" stroke={color} strokeWidth="2" points={points.join(' ')} />
+        {data.map((point, index) => {
+          const x = padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2);
+          const y = height - padding - ((point.value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
+          return <circle key={`${point.label}-${index}`} cx={x} cy={y} r="3.5" fill={color} />;
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function SimpleBarChart({ data, color = '#EAEAEA' }) {
+  if (!data || data.length === 0) {
+    return <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40">NO DATA</div>;
+  }
+
+  const maxValue = Math.max(...data.map((item) => item.value || 0), 1);
+
+  return (
+    <div className="flex items-end gap-3 h-40">
+      {data.map((item) => (
+        <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
+          <div className="w-full flex items-end justify-center rounded-t-sm" style={{ height: '140px' }}>
+            <div className="w-full rounded-t-sm" style={{ height: `${Math.max((item.value / maxValue) * 100, 8)}%`, backgroundColor: color }} />
+          </div>
+          <span className="text-[9px] uppercase tracking-widest text-[#EAEAEA]/50 text-center">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardHome({ adminKey, onAuthError }) {
   const [summary, setSummary] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [error, setError] = useState(null);
 
   const [drilldownOpen, setDrilldownOpen] = useState(false);
@@ -37,7 +93,9 @@ export default function DashboardHome({ adminKey, onAuthError }) {
   };
 
   useEffect(() => {
-    fetch('/api/admin/summary', { headers: { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` } })
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('stunna_admin_token')}` };
+
+    fetch('/api/admin/summary', { headers })
       .then(res => {
         if (res.status === 401) throw new Error('401');
         if (!res.ok) throw new Error('Fetch failed');
@@ -52,6 +110,22 @@ export default function DashboardHome({ adminKey, onAuthError }) {
         else setError(err.message);
       })
       .finally(() => setLoading(false));
+
+    fetch('/api/admin/analytics', { headers })
+      .then(res => {
+        if (res.status === 401) throw new Error('401');
+        if (!res.ok) throw new Error('Fetch failed');
+        return res.json();
+      })
+      .then(json => {
+        if (json.success) setAnalytics(json.data);
+        else throw new Error(json.error || 'Failed to load analytics');
+      })
+      .catch(err => {
+        if (err.message === '401') onAuthError();
+        else console.error('Failed to load analytics', err);
+      })
+      .finally(() => setLoadingAnalytics(false));
   }, [adminKey, onAuthError]);
 
   if (loading) return <div className="text-[10px] tracking-widest uppercase animate-pulse text-[#EAEAEA]/50 mt-8">SYNCING ANALYTICS...</div>;
@@ -98,6 +172,32 @@ export default function DashboardHome({ adminKey, onAuthError }) {
           <p className="text-4xl text-yellow-500/80 font-medium">{summary?.pendingPayments || 0}</p>
         </div>
 
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">SALES TREND</h3>
+            <span className="text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">30D</span>
+          </div>
+          {loadingAnalytics ? (
+            <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
+          ) : (
+            <SimpleLineChart data={(analytics?.ordersByDay || []).map((item) => ({ label: item.label, value: item.revenue || 0 }))} color="#F9D423" />
+          )}
+        </div>
+
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">PAYMENT MIX</h3>
+            <span className="text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">STATUS</span>
+          </div>
+          {loadingAnalytics ? (
+            <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
+          ) : (
+            <SimpleBarChart data={(analytics?.paymentMix || []).map((item) => ({ label: item.label, value: item.value || 0 }))} color="#5BE6AF" />
+          )}
+        </div>
       </div>
 
       {drilldownOpen && (

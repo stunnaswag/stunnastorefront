@@ -1219,6 +1219,49 @@ app.put('/api/admin/settings/:key', requireAdmin, async (req, res) => {
   }
 });
 
+// ----- GET /api/admin/analytics ----------------------------
+app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
+  try {
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('created_at, total_amount, payment_status')
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: true });
+
+    if (ordersError) throw ordersError;
+
+    const dailyMap = new Map();
+    orders.forEach((order) => {
+      const day = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const existing = dailyMap.get(day) || { label: day, orders: 0, revenue: 0 };
+      existing.orders += 1;
+      existing.revenue += Number(order.total_amount || 0);
+      dailyMap.set(day, existing);
+    });
+
+    const ordersByDay = Array.from(dailyMap.values()).slice(-7);
+
+    const paymentMix = [
+      { label: 'Success', value: orders.filter((order) => order.payment_status === 'success').length },
+      { label: 'Pending', value: orders.filter((order) => order.payment_status === 'pending').length },
+      { label: 'Failed', value: orders.filter((order) => order.payment_status === 'failed').length },
+      { label: 'Refunded', value: orders.filter((order) => order.payment_status === 'refunded').length }
+    ].filter((item) => item.value > 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        range: '30d',
+        ordersByDay,
+        paymentMix
+      }
+    });
+  } catch (error) {
+    console.error('Admin GET Analytics Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve analytics', details: error.message });
+  }
+});
+
 // ----- GET /api/admin/summary --------------------------------
 app.get('/api/admin/summary', requireAdmin, async (_req, res) => {
   try {
