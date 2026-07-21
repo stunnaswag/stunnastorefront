@@ -902,6 +902,25 @@ app.get('/api/admin/orders', requireAdmin, async (_req, res) => {
   }
 });
 
+// ----- DELETE /api/admin/orders/:id -------------------------
+app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Admin DELETE Order Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete order', details: error.message });
+  }
+});
+
 // ----- POST /api/admin/upload-media -------------------------
 app.post('/api/admin/upload-media', requireAdmin, upload.single('image'), async (req, res) => {
   try {

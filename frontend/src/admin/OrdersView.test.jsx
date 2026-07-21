@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import OrdersView from './OrdersView';
 
@@ -43,6 +43,36 @@ describe('OrdersView admin shipping details', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/12 market road/i)).toBeInTheDocument();
+    });
+  });
+
+  it('sends a delete request when the admin chooses to delete an order', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, count: 1, data: orderList }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, message: 'Order deleted successfully' }),
+      });
+
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('confirm', vi.fn(() => true));
+
+    render(<OrdersView adminKey="admin-key" onAuthError={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/buyer@example.com/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/orders/ord-123',
+        expect.objectContaining({ method: 'DELETE' })
+      );
     });
   });
 });
