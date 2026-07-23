@@ -110,7 +110,8 @@ export default function InventoryView({ adminKey, onAuthError }) {
       {isMobile ? (
         <div className="flex flex-col gap-3 md:hidden">
           {products.map((p) => {
-            const totalStock = p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
+            const hasNoStock = !p.variants || p.variants.length === 0 || p.variants.every(v => (v.stock || 0) === 0);
+            const hasLowStock = p.variants?.some(v => (v.stock || 0) > 0 && (v.stock || 0) < 5);
             return (
               <article key={p.id} className="rounded-2xl border border-[#EAEAEA]/10 bg-[#EAEAEA]/5 p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -118,9 +119,9 @@ export default function InventoryView({ adminKey, onAuthError }) {
                     <p className="text-[10px] uppercase tracking-[0.3em] text-[#EAEAEA]/40">NAME</p>
                     <p className="mt-1 font-medium text-[#EAEAEA]">{p.name}</p>
                   </div>
-                  {totalStock === 0 ? (
+                  {hasNoStock ? (
                     <span className="rounded-full bg-red-400/10 px-2.5 py-1 text-[10px] font-medium uppercase text-red-400">OUT OF STOCK</span>
-                  ) : totalStock < 5 ? (
+                  ) : hasLowStock ? (
                     <span className="rounded-full bg-orange-400/10 px-2.5 py-1 text-[10px] font-medium uppercase text-orange-400">LOW</span>
                   ) : (
                     <span className="rounded-full bg-green-400/10 px-2.5 py-1 text-[10px] font-medium uppercase text-green-400">GOOD</span>
@@ -182,6 +183,8 @@ export default function InventoryView({ adminKey, onAuthError }) {
             <tbody>
               {products.map(p => {
                 const totalStock = p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
+                const hasNoStock = !p.variants || p.variants.length === 0 || p.variants.every(v => (v.stock || 0) === 0);
+                const hasLowStock = p.variants?.some(v => (v.stock || 0) > 0 && (v.stock || 0) < 5);
                 return (
                   <tr key={p.id} className="border-b-[1px] border-[#EAEAEA]/5 hover:bg-[#EAEAEA]/5 transition-colors group">
                     <td className="py-5 pr-4 text-[#EAEAEA] font-medium">{p.name}</td>
@@ -189,9 +192,9 @@ export default function InventoryView({ adminKey, onAuthError }) {
                     <td className="py-5 pr-4 text-[#EAEAEA]/70">{p.collection || 'N/A'}</td>
                     <td className={`py-5 pr-4 font-medium ${p.is_active ? 'text-green-500/80' : 'text-red-500/80'}`}>{p.is_active ? 'ACTIVE' : 'HIDDEN'}</td>
                     <td className="py-5 pr-4 font-medium">
-                      {totalStock === 0 ? (
+                      {hasNoStock ? (
                         <span className="text-red-400 bg-red-400/10 px-2 py-1 rounded">OUT OF STOCK</span>
-                      ) : totalStock < 5 ? (
+                      ) : hasLowStock ? (
                         <span className="text-orange-400 bg-orange-400/10 px-2 py-1 rounded">LOW ({totalStock})</span>
                       ) : (
                         <span className="text-green-400 bg-green-400/10 px-2 py-1 rounded">GOOD ({totalStock})</span>

@@ -1454,7 +1454,7 @@ app.get('/api/admin/summary', requireAdmin, async (_req, res) => {
       supabase.from('products').select('*', { count: 'exact', head: true }),
       supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('orders').select('*', { count: 'exact', head: true }).eq('fulfillment_status', 'pending'),
-      supabase.from('variants').select('*', { count: 'exact', head: true }).lte('stock', 5),
+      supabase.from('variants').select('products!inner(is_active)', { count: 'exact', head: true }).lt('stock', 5).eq('products.is_active', true),
       supabase.from('manual_payments').select('*', { count: 'exact', head: true }).eq('status', 'Pending')
     ]);
 

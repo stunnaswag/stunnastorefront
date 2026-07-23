@@ -201,8 +201,9 @@ export default function DashboardHome({ adminKey, onAuthError }) {
       const json = await res.json();
       if (json.success) {
         const filtered = json.data.filter(p => {
-          const totalStock = p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
-          return totalStock < 5;
+          if (!p.is_active) return false;
+          if (!p.variants || p.variants.length === 0) return false;
+          return p.variants.some(v => (v.stock || 0) < 5);
         });
         setLowStockProducts(filtered);
       }
@@ -412,12 +413,13 @@ export default function DashboardHome({ adminKey, onAuthError }) {
               ) : (
                 <div className="flex flex-col gap-4">
                   {lowStockProducts.map(p => {
-                    const totalStock = p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
+                    const lowVariants = p.variants.filter(v => (v.stock || 0) < 5);
+                    const lowVariantLabels = lowVariants.map(v => `${v.size === 'ONE SIZE' ? 'STOCK' : v.size}: ${v.stock || 0}`).join(' | ');
                     return (
                       <div key={p.id} className="flex justify-between items-center border-[1px] border-[#EAEAEA]/10 p-4 bg-[#EAEAEA]/5">
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] tracking-widest uppercase text-[#EAEAEA] font-medium">{p.name}</span>
-                          <span className="text-[10px] tracking-widest uppercase text-red-400">STOCK: {totalStock}</span>
+                          <span className="text-[10px] tracking-widest uppercase text-red-400">{lowVariantLabels}</span>
                         </div>
                         <button 
                           onClick={() => { setSelectedProduct(p); setModalOpen(true); setTimeout(() => { document.getElementById('variant-manager')?.scrollIntoView({behavior: 'smooth'}) }, 300); }}
