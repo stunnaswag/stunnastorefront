@@ -103,6 +103,21 @@ function SimpleAreaChart({ series }) {
             </g>
           );
         })}
+        {/* X Axis Labels */}
+        {series[0].data.map((point, index) => {
+          const skip = Math.max(1, Math.floor(dataLength / 6));
+          if (index % skip !== 0 && index !== dataLength - 1 && index !== 0) return null;
+          
+          // Don't render the second to last label if it's too close to the last one
+          if (index === dataLength - 1 - (dataLength - 1) % skip && index !== dataLength - 1) return null;
+
+          const x = padding + (index / Math.max(dataLength - 1, 1)) * (width - padding * 2);
+          return (
+            <text key={`label-${index}`} x={x} y={height - padding + 12} fill="#EAEAEA" opacity="0.4" fontSize="6" textAnchor="middle" letterSpacing="0.5" className="uppercase">
+              {point.label}
+            </text>
+          );
+        })}
       </svg>
       <div className="absolute top-0 right-0 flex gap-4">
         {series.map((s, i) => (
