@@ -44,13 +44,119 @@ function SimpleBarChart({ data, color = '#EAEAEA' }) {
   return (
     <div className="flex items-end gap-3 h-40">
       {data.map((item) => (
-        <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
-          <div className="w-full flex items-end justify-center rounded-t-sm" style={{ height: '140px' }}>
-            <div className="w-full rounded-t-sm" style={{ height: `${Math.max((item.value / maxValue) * 100, 8)}%`, backgroundColor: color }} />
+        <div key={item.label} className="flex flex-1 flex-col items-center gap-1">
+          <span className="text-[9px] tracking-widest text-[#EAEAEA] font-medium">{item.value}</span>
+          <div className="w-full flex items-end justify-center rounded-t-sm" style={{ height: '120px' }}>
+            <div className="w-full rounded-t-sm" style={{ height: `${Math.max((item.value / maxValue) * 100, 4)}%`, backgroundColor: color }} />
           </div>
           <span className="text-[9px] uppercase tracking-widest text-[#EAEAEA]/50 text-center">{item.label}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function SimpleAreaChart({ series }) {
+  if (!series || series.length === 0 || !series[0].data || series[0].data.length === 0) {
+    return <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40">NO DATA</div>;
+  }
+
+  const width = 320;
+  const height = 160;
+  const padding = 24;
+  
+  const maxValue = Math.max(...series.flatMap(s => s.data.map(d => d.value || 0)), 1);
+  const minValue = 0;
+  const dataLength = series[0].data.length;
+
+  return (
+    <div className="w-full overflow-x-auto relative">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40 min-w-[280px]">
+        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(234,234,234,0.15)" strokeWidth="1" />
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(234,234,234,0.15)" strokeWidth="1" />
+        
+        {series.map((s, sIdx) => {
+          const color = s.color || '#EAEAEA';
+          const points = s.data.map((point, index) => {
+            const x = padding + (index / Math.max(dataLength - 1, 1)) * (width - padding * 2);
+            const y = height - padding - ((point.value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
+            return `${x},${y}`;
+          });
+          const lastX = padding + (dataLength > 1 ? width - padding * 2 : 0);
+          const areaPoints = `${padding},${height - padding} ${points.join(' ')} ${lastX},${height - padding}`;
+
+          return (
+            <g key={sIdx}>
+              <defs>
+                <linearGradient id={`gradient-${sIdx}-${color.replace('#','')}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                  <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <polygon points={areaPoints} fill={`url(#gradient-${sIdx}-${color.replace('#','')})`} />
+              <polyline fill="none" stroke={color} strokeWidth="2" points={points.join(' ')} />
+              {s.data.map((point, index) => {
+                const x = padding + (index / Math.max(dataLength - 1, 1)) * (width - padding * 2);
+                const y = height - padding - ((point.value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
+                return <circle key={`${point.label}-${index}`} cx={x} cy={y} r="2.5" fill={color} />;
+              })}
+            </g>
+          );
+        })}
+      </svg>
+      <div className="absolute top-0 right-0 flex gap-4">
+        {series.map((s, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{backgroundColor: s.color}}></div>
+            <span className="text-[8px] uppercase tracking-widest text-[#EAEAEA]">{s.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SimpleDonutChart({ data, colors }) {
+  if (!data || data.length === 0) return <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40">NO DATA</div>;
+  
+  const total = data.reduce((acc, item) => acc + item.value, 0) || 1;
+  const radius = 35;
+  const circumference = 2 * Math.PI * radius;
+  let currentOffset = 0;
+
+  return (
+    <div className="flex items-center justify-center w-full h-40 gap-8">
+      <svg viewBox="0 0 100 100" className="h-full">
+        {data.map((item, i) => {
+          const percent = item.value / total;
+          const strokeDasharray = `${percent * circumference} ${circumference}`;
+          const strokeDashoffset = -currentOffset;
+          currentOffset += percent * circumference;
+          return (
+            <circle
+              key={item.label}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="transparent"
+              stroke={colors[i % colors.length]}
+              strokeWidth="20"
+              strokeDasharray={strokeDasharray}
+              strokeDashoffset={strokeDashoffset}
+              transform="rotate(-90 50 50)"
+              className="transition-all duration-500"
+            />
+          );
+        })}
+      </svg>
+      <div className="flex flex-col gap-2">
+        {data.map((item, i) => (
+          <div key={item.label} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+            <span className="text-[10px] tracking-widest uppercase text-[#EAEAEA]">{item.label} ({Math.round((item.value/total)*100)}%)</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -61,6 +167,7 @@ export default function DashboardHome({ adminKey, onAuthError }) {
   const [loading, setLoading] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [error, setError] = useState(null);
+  const [clickGraphDays, setClickGraphDays] = useState(2);
 
   const [drilldownOpen, setDrilldownOpen] = useState(false);
   const [lowStockProducts, setLowStockProducts] = useState([]);
@@ -195,15 +302,28 @@ export default function DashboardHome({ adminKey, onAuthError }) {
           {loadingAnalytics ? (
             <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
           ) : (
-            <SimpleBarChart data={(analytics?.paymentMix || []).map((item) => ({ label: item.label, value: item.value || 0 }))} color="#5BE6AF" />
+            <SimpleDonutChart 
+              data={(analytics?.paymentMix || []).map((item) => ({ label: item.label, value: item.value || 0 }))} 
+              colors={['#5BE6AF', '#F9D423', '#F08A5D', '#EAEAEA']} 
+            />
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">CLICKS</h3>
+          <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.uniqueVisitors || 0}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
+        </div>
         <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
           <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">WEBSITE VIEWS</h3>
           <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.pageViews || 0}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
+        </div>
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
+          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">CONVERSION RATE</h3>
+          <p className="mt-4 text-4xl font-medium text-green-500/80">{analytics?.websiteTotals?.conversionRate || '0'}%</p>
           <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
         </div>
         <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
@@ -211,15 +331,52 @@ export default function DashboardHome({ adminKey, onAuthError }) {
           <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.clicks || 0}</p>
           <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
         </div>
-        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6 xl:col-span-1">
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6 xl:col-span-3">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">VISITS BY DAY</h3>
+            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">TRAFFIC OVERVIEW</h3>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setClickGraphDays(2)}
+                className={`text-[10px] uppercase tracking-widest transition-colors ${clickGraphDays === 2 ? 'text-blue-400 font-medium' : 'text-[#EAEAEA]/30 hover:text-[#EAEAEA]/60'}`}
+              >2D</button>
+              <button 
+                onClick={() => setClickGraphDays(30)}
+                className={`text-[10px] uppercase tracking-widest transition-colors ${clickGraphDays === 30 ? 'text-blue-400 font-medium' : 'text-[#EAEAEA]/30 hover:text-[#EAEAEA]/60'}`}
+              >30D</button>
+            </div>
+          </div>
+          {loadingAnalytics ? (
+            <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
+          ) : (
+            <SimpleAreaChart 
+              series={[
+                {
+                  name: 'VIEWS',
+                  color: '#F08A5D',
+                  data: (analytics?.websiteByDay || []).slice(-clickGraphDays).map(item => ({ label: item.label, value: item.views || 0 }))
+                },
+                {
+                  name: 'CLICKS',
+                  color: '#00D8FF',
+                  data: (analytics?.websiteByDay || []).slice(-clickGraphDays).map(item => ({ label: item.label, value: item.clicks || 0 }))
+                }
+              ]} 
+            />
+          )}
+        </div>
+        
+        <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6 xl:col-span-3">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">VIEWS BY DAY</h3>
             <span className="text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">7D</span>
           </div>
           {loadingAnalytics ? (
             <div className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/40 animate-pulse">LOADING ANALYTICS...</div>
           ) : (
-            <SimpleBarChart data={(analytics?.websiteByDay || []).map((item) => ({ label: item.label, value: item.views || 0 }))} color="#F08A5D" />
+            <SimpleBarChart data={(analytics?.websiteByDay || []).slice(-7).map((item) => ({ label: item.label, value: item.views || 0 }))} color="#5BE6AF" />
           )}
         </div>
       </div>

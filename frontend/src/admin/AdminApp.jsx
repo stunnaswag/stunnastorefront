@@ -7,6 +7,7 @@ import OrdersView from './OrdersView';
 import DashboardHome from './DashboardHome';
 import StorefrontManager from './StorefrontManager';
 import PaymentsView from './PaymentsView';
+import NewsletterView from './NewsletterView';
 import SettingsView from './SettingsView';
 
 export default function AdminApp() {
@@ -37,6 +38,7 @@ export default function AdminApp() {
         <Route path="/orders" element={<OrdersView adminKey={adminKey} onAuthError={handleLogout} />} />
         <Route path="/storefront" element={<StorefrontManager adminKey={adminKey} onAuthError={handleLogout} />} />
         <Route path="/payments" element={<PaymentsView adminKey={adminKey} onAuthError={handleLogout} />} />
+        <Route path="/newsletter" element={<NewsletterView adminKey={adminKey} onAuthError={handleLogout} />} />
         <Route path="/settings" element={<SettingsView adminKey={adminKey} onAuthError={handleLogout} />} />
       </Routes>
     </AdminLayout>

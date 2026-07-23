@@ -833,7 +833,7 @@ app.post('/api/webhooks/paystack', async (req, res) => {
 
 // ----- POST /api/newsletter ---------------------------------
 app.post('/api/newsletter', async (req, res) => {
-  const { email } = req.body;
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ success: false, message: 'Invalid email address.' });
   }
@@ -842,8 +842,27 @@ app.post('/api/newsletter', async (req, res) => {
     const { error } = await supabase
       .from('subscribers')
       .insert([{ email }]);
-      
+
     if (error && error.code !== '23505') throw error; // Ignore duplicates silently
+
+    if (!error) {
+      try {
+        await sendBrevoEmail(
+          email,
+          'WELCOME TO STUNNA SWAG SEASON',
+          `
+          <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
+            <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
+            <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">WELCOME TO THE CULT.</p>
+            <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOU ARE NOW ON THE LIST FOR NEWS, DROPS, AND THE LATEST STUNNA SWAG SEASON RELEASES.</p>
+            <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
+          </div>
+          `
+        );
+      } catch (emailError) {
+        console.error('Newsletter welcome email failed:', emailError.message);
+      }
+    }
 
     res.status(200).json({ success: true, message: 'Subscribed successfully.' });
   } catch (error) {
@@ -910,6 +929,90 @@ app.get('/api/admin/products', requireAdmin, async (_req, res) => {
   } catch (error) {
     console.error('Admin Products Error:', error);
     res.status(500).json({ success: false, message: 'Failed to retrieve administrative products.' });
+  }
+});
+
+// ----- GET /api/admin/subscribers ---------------------------
+app.get('/api/admin/subscribers', requireAdmin, async (_req, res) => {
+  try {
+    const { data: subscribers, error } = await supabase
+      .from('subscribers')
+      .select('id, email, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, count: subscribers.length, data: subscribers });
+  } catch (error) {
+    console.error('Admin Subscribers Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve newsletter subscribers.' });
+  }
+});
+
+// ----- POST /api/admin/newsletter/send ----------------------
+app.post('/api/admin/newsletter/send', requireAdmin, async (req, res) => {
+  try {
+    const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : '';
+    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+
+    if (!subject || !message) {
+      return res.status(400).json({ success: false, message: 'Subject and message are required.' });
+    }
+    if (subject.length > 160 || message.length > 10000) {
+      return res.status(400).json({ success: false, message: 'Subject or message is too long.' });
+    }
+
+    const { data: subscribers, error: subscriberError } = await supabase
+      .from('subscribers')
+      .select('email')
+      .order('created_at', { ascending: true });
+
+    if (subscriberError) throw subscriberError;
+
+    let sent = 0;
+    let failed = 0;
+    
+    // Process in smaller chunks to avoid overwhelming the server or API
+    const chunkSize = 10;
+    for (let i = 0; i < subscribers.length; i += chunkSize) {
+      const chunk = subscribers.slice(i, i + chunkSize);
+      
+      await Promise.allSettled(chunk.map(async (subscriber) => {
+        try {
+          await sendBrevoEmail(
+            subscriber.email,
+            subject,
+            `<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto"><h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1><div style="font-size:14px;line-height:1.8;white-space:pre-line">${message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div><p style="font-size:12px;color:#666;margin:32px 0 0">$$$ STUNNASWAGSEASON.STORE</p></div>`
+          );
+          sent++;
+        } catch (emailError) {
+          failed++;
+          console.error(`Newsletter campaign failed for ${subscriber.email}:`, emailError.message);
+        }
+      }));
+    }
+
+    return res.status(200).json({ success: true, sent, failed, total: subscribers.length });
+  } catch (error) {
+    console.error('Admin Newsletter Send Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to send newsletter.' });
+  }
+});
+
+// ----- DELETE /api/admin/subscribers/:id --------------------
+app.delete('/api/admin/subscribers/:id', requireAdmin, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('subscribers')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Subscriber deleted successfully.' });
+  } catch (error) {
+    console.error('Admin Delete Subscriber Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete subscriber.' });
   }
 });
 
@@ -1264,7 +1367,7 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
 
     const { data: events, error: eventsError } = await supabase
       .from('analytics_events')
-      .select('event_type, created_at, path')
+      .select('event_type, created_at, path, session_id')
       .gte('created_at', analyticsSince)
       .order('created_at', { ascending: true });
 
@@ -1289,16 +1392,36 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
     ].filter((item) => item.value > 0);
 
     const websiteDailyMap = new Map();
+    const pathCounts = {};
+    const uniqueSessions = new Set();
+
     events.forEach((event) => {
       const day = new Date(event.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const existing = websiteDailyMap.get(day) || { label: day, views: 0, clicks: 0 };
-      if (event.event_type === 'page_view') existing.views += 1;
+      if (event.event_type === 'page_view') {
+        existing.views += 1;
+        if (event.path) {
+          pathCounts[event.path] = (pathCounts[event.path] || 0) + 1;
+        }
+      }
       if (event.event_type === 'click') existing.clicks += 1;
       websiteDailyMap.set(day, existing);
+
+      if (event.session_id) {
+        uniqueSessions.add(event.session_id);
+      }
     });
 
     const pageViews = events.filter((event) => event.event_type === 'page_view').length;
     const clicks = events.filter((event) => event.event_type === 'click').length;
+    const uniqueVisitors = uniqueSessions.size;
+    
+    const conversionRate = uniqueVisitors > 0 ? ((orders.length / uniqueVisitors) * 100).toFixed(1) : 0;
+
+    const popularPages = Object.entries(pathCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([path, views]) => ({ path, views }));
 
     res.status(200).json({
       success: true,
@@ -1306,8 +1429,9 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
         range: '30d',
         ordersByDay,
         paymentMix,
-        websiteByDay: Array.from(websiteDailyMap.values()).slice(-7),
-        websiteTotals: { pageViews, clicks }
+        websiteByDay: Array.from(websiteDailyMap.values()),
+        websiteTotals: { pageViews, clicks, uniqueVisitors, conversionRate },
+        popularPages
       }
     });
   } catch (error) {

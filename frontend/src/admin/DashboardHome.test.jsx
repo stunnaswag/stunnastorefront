@@ -31,7 +31,8 @@ describe('DashboardHome analytics view', () => {
                 { label: 'Pending', value: 1 }
               ],
               websiteByDay: [{ label: 'Jun 02', views: 4, clicks: 2 }],
-              websiteTotals: { pageViews: 4, clicks: 2 }
+              websiteTotals: { pageViews: 4, clicks: 2, uniqueVisitors: 3, conversionRate: '15.0' },
+              popularPages: [{ path: '/product/test', views: 4 }]
             }
           })
         });

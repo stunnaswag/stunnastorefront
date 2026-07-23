@@ -7,6 +7,7 @@ const navItems = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/storefront', label: 'Storefront' },
   { to: '/admin/payments', label: 'Payments' },
+  { to: '/admin/newsletter', label: 'Newsletter' },
   { to: '/admin/inventory', label: 'Inventory' },
   { to: '/admin/orders', label: 'Orders' },
   { to: '/admin/settings', label: 'Settings' },
