@@ -110,6 +110,7 @@ export default function InventoryView({ adminKey, onAuthError }) {
       {isMobile ? (
         <div className="flex flex-col gap-3 md:hidden">
           {products.map((p) => {
+            const totalStock = p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
             const hasNoStock = !p.variants || p.variants.length === 0 || p.variants.every(v => (v.stock || 0) === 0);
             const hasLowStock = p.variants?.some(v => (v.stock || 0) > 0 && (v.stock || 0) < 5);
             return (
