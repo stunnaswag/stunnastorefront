@@ -49,6 +49,7 @@ export default function ProductPage() {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const controller = new AbortController();
     fetchProduct(controller.signal);
     
