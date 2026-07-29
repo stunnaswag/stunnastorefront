@@ -756,15 +756,17 @@ app.post('/api/checkout/manual', async (req, res) => {
         customer_email,
         'STUNNA — ORDER PENDING',
         `
-        <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
-          <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
-          <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">ORDER RECEIVED.</p>
+        <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#2C1414;color:#EAEAEA;padding:40px 20px;max-width:600px;margin:0 auto">
+          <div style="margin:0 0 32px;border-bottom:2px solid #A31616;padding-bottom:16px">
+            <img src="https://www.stunnaswagseason.store/logo/logo.png" alt="STUNNA" style="height:40px;display:block" />
+          </div>
+          <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px;color:#A31616">ORDER RECEIVED.</p>
           <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR MANUAL PAYMENT IS PENDING VERIFICATION.<br/>WE WILL NOTIFY YOU ONCE IT HAS BEEN REVIEWED.</p>
-          <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
-            <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+          <div style="background:#3a1c1c;border:1px solid #A31616;padding:20px;margin:0 0 32px;border-radius:4px">
+            <p style="font-size:12px;letter-spacing:1px;color:#A09090;margin:0 0 8px">ORDER ID</p>
             <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${createdOrderId}</p>
           </div>
-          <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
+          <p style="font-size:12px;color:#A09090;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
         </div>
         `
       );
@@ -851,11 +853,13 @@ app.post('/api/newsletter', async (req, res) => {
           email,
           'WELCOME TO STUNNA SWAG SEASON',
           `
-          <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
-            <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
-            <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">WELCOME TO THE CULT.</p>
+          <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#2C1414;color:#EAEAEA;padding:40px 20px;max-width:600px;margin:0 auto">
+            <div style="margin:0 0 32px;border-bottom:2px solid #A31616;padding-bottom:16px">
+              <img src="https://www.stunnaswagseason.store/logo/logo.png" alt="STUNNA" style="height:40px;display:block" />
+            </div>
+            <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px;color:#A31616">WELCOME TO THE CULT.</p>
             <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOU ARE NOW ON THE LIST FOR NEWS, DROPS, AND THE LATEST STUNNA SWAG SEASON RELEASES.</p>
-            <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
+            <p style="font-size:12px;color:#A09090;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
           </div>
           `
         );
@@ -982,7 +986,7 @@ app.post('/api/admin/newsletter/send', requireAdmin, async (req, res) => {
           await sendBrevoEmail(
             subscriber.email,
             subject,
-            `<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto"><h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1><div style="font-size:14px;line-height:1.8;white-space:pre-line">${message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div><p style="font-size:12px;color:#666;margin:32px 0 0">$$$ STUNNASWAGSEASON.STORE</p></div>`
+            `<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#2C1414;color:#EAEAEA;padding:40px 20px;max-width:600px;margin:0 auto"><div style="margin:0 0 32px;border-bottom:2px solid #A31616;padding-bottom:16px"><img src="https://www.stunnaswagseason.store/logo/logo.png" alt="STUNNA" style="height:40px;display:block" /></div><div style="font-size:14px;line-height:1.8;white-space:pre-line">${message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div><p style="font-size:12px;color:#A09090;margin:32px 0 0">$$$ STUNNASWAGSEASON.STORE</p></div>`
           );
           sent++;
         } catch (emailError) {
@@ -1590,35 +1594,39 @@ app.patch('/api/admin/payments/:id/verify', requireAdmin, async (req, res) => {
         if (status === 'Verified') {
           await sendBrevoEmail(
             orderData.customer_email,
-            'STUNNA — PAYMENT VERIFIED',
+            'STUNNA (PAYMENT VERIFIED)',
             `
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
-              <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
-              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">PAYMENT SUCCESSFUL.</p>
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#2C1414;color:#EAEAEA;padding:40px 20px;max-width:600px;margin:0 auto">
+              <div style="margin:0 0 32px;border-bottom:2px solid #A31616;padding-bottom:16px">
+                <img src="https://www.stunnaswagseason.store/logo/logo.png" alt="STUNNA" style="height:40px;display:block" />
+              </div>
+              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px;color:#A31616">PAYMENT SUCCESSFUL.</p>
               <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR ORDER IS NOW BEING PROCESSED.<br/>YOU WILL RECEIVE TRACKING INFORMATION ONCE YOUR ORDER HAS SHIPPED.</p>
-              <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
-                <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+              <div style="background:#3a1c1c;border:1px solid #A31616;padding:20px;margin:0 0 32px;border-radius:4px">
+                <p style="font-size:12px;letter-spacing:1px;color:#A09090;margin:0 0 8px">ORDER ID</p>
                 <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
               </div>
-              <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
+              <p style="font-size:12px;color:#A09090;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
             </div>
             `
           );
         } else if (status === 'Rejected') {
           await sendBrevoEmail(
             orderData.customer_email,
-            'STUNNA — PAYMENT REJECTED',
+            'STUNNA (PAYMENT REJECTED)',
             `
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
-              <h1 style="font-size:28px;font-weight:900;letter-spacing:4px;margin:0 0 32px;border-bottom:2px solid #fff;padding-bottom:16px">STUNNA</h1>
-              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px">PAYMENT COULD NOT BE VERIFIED.</p>
-              <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR MANUAL PAYMENT WAS NOT APPROVED.<br/>PLEASE CONTACT US AT <a href="mailto:info@stunnaswagseason.store" style="color:#fff;text-decoration:underline">INFO@STUNNASWAGSEASON.STORE</a> FOR FURTHER ASSISTANCE.</p>
-              <div style="background:#111;border:1px solid #333;padding:20px;margin:0 0 32px">
-                <p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">ORDER ID</p>
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#2C1414;color:#EAEAEA;padding:40px 20px;max-width:600px;margin:0 auto">
+              <div style="margin:0 0 32px;border-bottom:2px solid #A31616;padding-bottom:16px">
+                <img src="https://www.stunnaswagseason.store/logo/logo.png" alt="STUNNA" style="height:40px;display:block" />
+              </div>
+              <p style="font-size:18px;font-weight:700;letter-spacing:2px;margin:0 0 24px;color:#A31616">PAYMENT COULD NOT BE VERIFIED.</p>
+              <p style="font-size:14px;line-height:1.8;margin:0 0 24px">YOUR MANUAL PAYMENT WAS NOT APPROVED.<br/>PLEASE CONTACT US AT <a href="mailto:info@stunnaswagseason.store" style="color:#A31616;text-decoration:underline">INFO@STUNNASWAGSEASON.STORE</a> FOR FURTHER ASSISTANCE.</p>
+              <div style="background:#3a1c1c;border:1px solid #A31616;padding:20px;margin:0 0 32px;border-radius:4px">
+                <p style="font-size:12px;letter-spacing:1px;color:#A09090;margin:0 0 8px">ORDER ID</p>
                 <p style="font-size:16px;font-weight:700;letter-spacing:1px;margin:0;word-break:break-all">${orderData.id}</p>
               </div>
-              ${verification_notes ? `<div style="background:#1a0000;border:1px solid #440000;padding:20px;margin:0 0 32px"><p style="font-size:12px;letter-spacing:1px;color:#888;margin:0 0 8px">REASON</p><p style="font-size:14px;color:#ff6666;margin:0">${verification_notes}</p></div>` : ''}
-              <p style="font-size:12px;color:#666;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
+              ${verification_notes ? `<div style="background:#3a1c1c;border:1px solid #A31616;padding:20px;margin:0 0 32px;border-radius:4px"><p style="font-size:12px;letter-spacing:1px;color:#A09090;margin:0 0 8px">REASON</p><p style="font-size:14px;color:#ff6666;margin:0">${verification_notes}</p></div>` : ''}
+              <p style="font-size:12px;color:#A09090;margin:0">$$$ STUNNASWAGSEASON.STORE</p>
             </div>
             `
           );
