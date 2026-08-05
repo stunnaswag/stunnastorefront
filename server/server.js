@@ -1357,6 +1357,31 @@ app.put('/api/admin/settings/:key', requireAdmin, async (req, res) => {
   }
 });
 
+function getAnalyticsDayKey(dateValue) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatAnalyticsDayLabel(dateValue) {
+  const key = getAnalyticsDayKey(dateValue);
+  if (!key) return 'N/A';
+
+  const [year, month, day] = key.split('-').map(Number);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+  return utcDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 // ----- GET /api/admin/analytics ----------------------------
 app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
   try {
@@ -1379,11 +1404,19 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
 
     const dailyMap = new Map();
     orders.forEach((order) => {
-      const day = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const existing = dailyMap.get(day) || { label: day, orders: 0, revenue: 0 };
+      const dayKey = getAnalyticsDayKey(order.created_at);
+      if (!dayKey) return;
+
+      const existing = dailyMap.get(dayKey) || {
+        key: dayKey,
+        label: formatAnalyticsDayLabel(order.created_at),
+        orders: 0,
+        revenue: 0,
+      };
+
       existing.orders += 1;
       existing.revenue += Number(order.total_amount || 0);
-      dailyMap.set(day, existing);
+      dailyMap.set(dayKey, existing);
     });
 
     const ordersByDay = Array.from(dailyMap.values()).slice(-7);
@@ -1400,8 +1433,16 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
     const uniqueSessions = new Set();
 
     events.forEach((event) => {
-      const day = new Date(event.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const existing = websiteDailyMap.get(day) || { label: day, views: 0, clicks: 0 };
+      const dayKey = getAnalyticsDayKey(event.created_at);
+      if (!dayKey) return;
+
+      const existing = websiteDailyMap.get(dayKey) || {
+        key: dayKey,
+        label: formatAnalyticsDayLabel(event.created_at),
+        views: 0,
+        clicks: 0,
+      };
+
       if (event.event_type === 'page_view') {
         existing.views += 1;
         if (event.path) {
@@ -1409,7 +1450,7 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
         }
       }
       if (event.event_type === 'click') existing.clicks += 1;
-      websiteDailyMap.set(day, existing);
+      websiteDailyMap.set(dayKey, existing);
 
       if (event.session_id) {
         uniqueSessions.add(event.session_id);

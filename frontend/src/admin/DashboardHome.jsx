@@ -328,7 +328,7 @@ export default function DashboardHome({ adminKey, onAuthError }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="border-[1px] border-[#EAEAEA]/20 bg-[#2C1414] p-6">
-          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">CLICKS</h3>
+          <h3 className="text-[10px] tracking-widest uppercase text-[#EAEAEA]/50">UNIQUE VISITORS</h3>
           <p className="mt-4 text-4xl font-medium text-[#EAEAEA]">{analytics?.websiteTotals?.uniqueVisitors || 0}</p>
           <p className="mt-2 text-[10px] uppercase tracking-widest text-[#EAEAEA]/30">LAST 30 DAYS</p>
         </div>
