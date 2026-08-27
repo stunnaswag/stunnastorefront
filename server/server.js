@@ -29,7 +29,6 @@ dns.setDefaultResultOrder('ipv4first');
 
 import express from 'express';
 import multer from 'multer';
-import sharp from 'sharp';
 
 // Set up memory storage for multipart uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1067,19 +1066,12 @@ app.post('/api/admin/upload-media', requireAdmin, upload.single('image'), async 
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const originalNameWithoutExt = req.file.originalname.replace(/\.[^/.]+$/, "");
-    const fileName = `${Date.now()}-${originalNameWithoutExt.replace(/\s+/g, '-')}.webp`;
+    const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '-')}`;
     
-    // Compress and resize image using sharp
-    const processedImageBuffer = await sharp(req.file.buffer)
-      .resize({ width: 1000, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
-
     const { error: uploadError } = await supabase.storage
       .from('products')
-      .upload(fileName, processedImageBuffer, {
-        contentType: 'image/webp',
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
         upsert: true
       });
 
