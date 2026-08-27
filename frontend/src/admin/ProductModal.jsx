@@ -63,8 +63,41 @@ export default function ProductModal({ product: initialProduct, adminKey, onClos
     setUploading(true);
     
     try {
+      // 1. Read the image
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('Failed to read image file'));
+      });
+
+      // 2. Calculate dimensions (max 1000px width/height to save space)
+      const MAX_DIMENSION = 1000;
+      let width = img.width;
+      let height = img.height;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      // 3. Draw on canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // 4. Convert to highly compressed WebP blob
+      const compressedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.8));
+      
       const uploadData = new FormData();
-      uploadData.append('image', file);
+      const originalName = file.name.replace(/\.[^/.]+$/, "");
+      uploadData.append('image', compressedBlob, `${originalName}.webp`);
 
       const res = await fetch('/api/admin/upload-media', {
         method: 'POST',
@@ -80,7 +113,6 @@ export default function ProductModal({ product: initialProduct, adminKey, onClos
       window.alert(`UPLOAD ERROR: ${err.message}`);
     } finally {
       setUploading(false);
-      // Reset input so the same file can be uploaded again if needed
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
