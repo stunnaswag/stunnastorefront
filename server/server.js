@@ -1403,6 +1403,27 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
     if (eventsError) throw eventsError;
 
     const dailyMap = new Map();
+    const websiteDailyMap = new Map();
+
+    for (let i = 30; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const dayKey = getAnalyticsDayKey(d);
+      if (dayKey) {
+        dailyMap.set(dayKey, {
+          key: dayKey,
+          label: formatAnalyticsDayLabel(d),
+          orders: 0,
+          revenue: 0,
+        });
+        websiteDailyMap.set(dayKey, {
+          key: dayKey,
+          label: formatAnalyticsDayLabel(d),
+          views: 0,
+          clicks: 0,
+        });
+      }
+    }
+
     orders.forEach((order) => {
       const dayKey = getAnalyticsDayKey(order.created_at);
       if (!dayKey) return;
@@ -1419,7 +1440,9 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
       dailyMap.set(dayKey, existing);
     });
 
-    const ordersByDay = Array.from(dailyMap.values()).slice(-7);
+    const ordersByDay = Array.from(dailyMap.values())
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .slice(-7);
 
     const paymentMix = [
       { label: 'Success', value: orders.filter((order) => order.payment_status === 'success').length },
@@ -1428,7 +1451,6 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
       { label: 'Refunded', value: orders.filter((order) => order.payment_status === 'refunded').length }
     ].filter((item) => item.value > 0);
 
-    const websiteDailyMap = new Map();
     const pathCounts = {};
     const uniqueSessions = new Set();
 
@@ -1468,13 +1490,15 @@ app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
       .slice(0, 5)
       .map(([path, views]) => ({ path, views }));
 
+    const sortedWebsiteByDay = Array.from(websiteDailyMap.values()).sort((a, b) => a.key.localeCompare(b.key));
+
     res.status(200).json({
       success: true,
       data: {
         range: '30d',
         ordersByDay,
         paymentMix,
-        websiteByDay: Array.from(websiteDailyMap.values()),
+        websiteByDay: sortedWebsiteByDay,
         websiteTotals: { pageViews, clicks, uniqueVisitors, conversionRate },
         popularPages
       }
