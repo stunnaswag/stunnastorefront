@@ -1386,21 +1386,28 @@ function formatAnalyticsDayLabel(dateValue) {
 app.get('/api/admin/analytics', requireAdmin, async (_req, res) => {
   try {
     const analyticsSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: orders, error: ordersError } = await supabase
-      .from('orders')
-      .select('created_at, total_amount, payment_status')
-      .gte('created_at', analyticsSince)
-      .order('created_at', { ascending: true });
+    // Supabase has a strict 1000 row limit per query. We must paginate to get all data.
+    async function fetchAll(table, columns) {
+      let allData = [];
+      let page = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from(table)
+          .select(columns)
+          .gte('created_at', analyticsSince)
+          .order('created_at', { ascending: true })
+          .range(page * 1000, (page + 1) * 1000 - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < 1000) break;
+        page++;
+      }
+      return allData;
+    }
 
-    if (ordersError) throw ordersError;
-
-    const { data: events, error: eventsError } = await supabase
-      .from('analytics_events')
-      .select('event_type, created_at, path, session_id')
-      .gte('created_at', analyticsSince)
-      .order('created_at', { ascending: true });
-
-    if (eventsError) throw eventsError;
+    const orders = await fetchAll('orders', 'created_at, total_amount, payment_status');
+    const events = await fetchAll('analytics_events', 'event_type, created_at, path, session_id');
 
     const dailyMap = new Map();
     const websiteDailyMap = new Map();
